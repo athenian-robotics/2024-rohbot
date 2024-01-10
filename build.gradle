@@ -1,11 +1,10 @@
 plugins {
     id "java"
     id "edu.wpi.first.GradleRIO" version "2024.1.1"
-    id 'com.diffplug.spotless' version '6.1.0'
-    id "io.freefair.lombok" version "6.5.0.3"
-    id("net.ltgt.errorprone") version "2.0.2"
+    id "net.ltgt.errorprone" version "3.1.0"
+    id "com.diffplug.spotless" version "6.23.3"
+    id "io.freefair.lombok" version "8.4"
 }
-
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -73,8 +72,6 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-
 }
 
 test {
@@ -101,50 +98,26 @@ deployArtifact.jarTask = jar
 wpi.java.configureExecutableTasks(jar)
 wpi.java.configureTestTasks(test)
 
-spotless {
-    java {
-        target fileTree('.') {
-            include '**/*.java'
-            exclude '**/build/**', '**/build-*/**'
-        }
-        toggleOffOn()
-        googleJavaFormat()
-        removeUnusedImports()
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-    groovyGradle {
-        target fileTree('.') {
-            include '**/*.gradle'
-            exclude '**/build/**', '**/build-*/**'
-        }
-        greclipse()
-        indentWithSpaces(4)
-        trimTrailingWhitespace()
-        endWithNewline()
-    }
-    format 'xml', {
-        target fileTree('.') {
-            include '**/*.xml'
-            exclude '**/build/**', '**/build-*/**'
-        }
-        eclipseWtp('xml')
-        trimTrailingWhitespace()
-        indentWithSpaces(2)
-        endWithNewline()
-    }
-    format 'misc', {
-        target fileTree('.') {
-            include '**/*.md', '**/.gitignore'
-            exclude '**/build/**', '**/build-*/**'
-        }
-        trimTrailingWhitespace()
-        indentWithSpaces(2)
-        endWithNewline()
-    }
-}
-
 // Configure string concat to always inline compile
 tasks.withType(JavaCompile) {
     options.compilerArgs.add '-XDstringConcat=inline'
 }
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    errorprone("com.google.errorprone:error_prone_core:latest.release")
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.errorprone.disableWarningsInGeneratedCode = true
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+    }
+}
+
+compileJava.dependsOn 'spotlessApply'
