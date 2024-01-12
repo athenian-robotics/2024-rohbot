@@ -29,5 +29,10 @@ public class  Shooter extends SubsystemBase {
         APPROACHING, // approaching setpoint
         TESTING // for collecting shooter data table values
     }
+
+    @Override
+    public void periodic() {
+
+    }
 }
 
