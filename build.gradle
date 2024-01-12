@@ -72,6 +72,9 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation 'com.github.shueja:Monologue:v1.0.0-beta1' // TODO: update when jawn is updated
+    errorprone("com.google.errorprone:error_prone_core:latest.release")
 }
 
 test {
@@ -105,10 +108,9 @@ tasks.withType(JavaCompile) {
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
-dependencies {
-    errorprone("com.google.errorprone:error_prone_core:latest.release")
-}
+
 
 tasks.withType(JavaCompile).configureEach {
     options.errorprone.disableWarningsInGeneratedCode = true
