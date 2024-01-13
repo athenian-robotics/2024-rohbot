@@ -6,6 +6,8 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkRelativeEncoder;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.ShooterDataTable;
+import frc.robot.ShooterSpec;
 import frc.robot.lib.SimpleVelocitySystem;
 import org.ejml.dense.row.misc.ImplCommonOps_DDMA;
 
@@ -28,6 +30,7 @@ public class  Shooter extends SubsystemBase {
     private State state = State.IDLE;
     private final SimpleVelocitySystem sysL;
     private final SimpleVelocitySystem sysR;
+    private final ShooterDataTable dataTable;
 
     public Shooter() {
         // TODO: Set the default command, if any, for this subsystem by calling setDefaultCommand(command)
@@ -36,6 +39,8 @@ public class  Shooter extends SubsystemBase {
         //       such as SpeedControllers, Encoders, DigitalInputs, etc.
         shooterLEncoder = shooterL.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
         shooterREncoder = shooterR.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
+
+        dataTable = new ShooterDataTable();
 
         sysL = new SimpleVelocitySystem(kS, kV, kA, MAX_ERROR, MAX_CONTROL_EFFORT, MODEL_DEVIATION, ENCODER_DEVIATION, LOOPTIME);
         sysR = new SimpleVelocitySystem(kS, kV, kA, MAX_ERROR, MAX_CONTROL_EFFORT, MODEL_DEVIATION, ENCODER_DEVIATION, LOOPTIME);
@@ -66,6 +71,10 @@ public class  Shooter extends SubsystemBase {
                 break;
             case APPROACHING:
                 // send limelight data to data table, send result to system
+                double distance = 0.0;// TODO: get limelight data
+                ShooterSpec spec = dataTable.getSpecs(distance);
+                sysL.set(spec.getLeftSpeed());
+                sysR.set(spec.getRightSpeed());
                 break;
         }
         if (atSetpoint()) {
