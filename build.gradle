@@ -73,8 +73,10 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    implementation 'com.github.jdiemke.delaunay-triangulator:DelaunayTriangulator:1.0.0'
+
     implementation 'com.github.shueja:Monologue:v1.0.0-beta1' // TODO: update when jawn is updated
-    errorprone("com.google.errorprone:error_prone_core:latest.release")
+    errorprone('com.google.errorprone:error_prone_core:2.18.0')
 }
 
 test {

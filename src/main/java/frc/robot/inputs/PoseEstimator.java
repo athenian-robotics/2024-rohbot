@@ -1,4 +1,3 @@
 package frc.robot.inputs;
 
-public class PoseEstimator {
-}
+public class PoseEstimator {}

@@ -1,32 +1,64 @@
 package frc.robot;
 
-import java.util.TreeMap;
+import edu.wpi.first.math.geometry.Translation2d;
+import frc.robot.lib.BilinearInterpolator;
 
 public class ShooterDataTable {
-    private final TreeMap<Double, ShooterSpec> dataTable;
+  private BilinearInterpolator interpolatorAngle;
+  private BilinearInterpolator interpolatorSpeedL;
+  private BilinearInterpolator interpolatorSpeedR;
+  private BilinearInterpolator interpolatorOffset;
 
-    public ShooterDataTable () {
-        this.dataTable = new TreeMap<>();
+  public ShooterDataTable(Translation2d[] points, ShooterSpec[] specs) {
+    double[] x = new double[points.length];
+    double[] y = new double[points.length];
+    double[] angle = new double[points.length];
+    double[] speedL = new double[points.length];
+    double[] speedR = new double[points.length];
+    double[] offset = new double[points.length];
+    for (int i = 0; i < points.length; i++) {
+      x[i] = points[i].getX();
+      y[i] = points[i].getY();
+      angle[i] = specs[i].angle();
+      speedL[i] = specs[i].speedL();
+      speedR[i] = specs[i].speedR();
+      offset[i] = specs[i].offset();
     }
-
-    public void addSpecs(double distance, double shooterAngle, double leftSpeed, double rightSpeed) {
-        ShooterSpec toAdd = new ShooterSpec(shooterAngle, leftSpeed, rightSpeed);
-        dataTable.put(distance, toAdd);
+    try {
+      interpolatorAngle = new BilinearInterpolator(x, y, angle);
+      interpolatorSpeedL = new BilinearInterpolator(x, y, speedL);
+      interpolatorSpeedR = new BilinearInterpolator(x, y, speedR);
+      interpolatorOffset = new BilinearInterpolator(x, y, offset);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
+  }
 
-    public ShooterSpec getSpecs(double distance) {
-        if (dataTable.containsKey(distance)) return dataTable.get(distance);
+  // testing
+  public static void main(String... args) {
+    Translation2d[] points =
+        new Translation2d[] {
+          new Translation2d(0, 0),
+          new Translation2d(0, 1),
+          new Translation2d(1, 0),
+          new Translation2d(1, 1)
+        };
+    ShooterSpec[] specs =
+        new ShooterSpec[] {
+          new ShooterSpec(0, 0, 0, 0),
+          new ShooterSpec(1, 1, 1, 1),
+          new ShooterSpec(2, 2, 2, 2),
+          new ShooterSpec(2, 2, 2, 2)
+        };
+    ShooterDataTable table = new ShooterDataTable(points, specs);
+    System.out.println(table.get(new Translation2d(0.5, 0.5)));
+  }
 
-        double prevDist = dataTable.lowerKey(distance);
-        double nextDist = dataTable.higherKey(distance);
-        ShooterSpec s1 = dataTable.get(prevDist);
-        ShooterSpec s2 = dataTable.get(nextDist);
-        double diffDist = nextDist - prevDist;
-        double weight2 = (nextDist - distance) / diffDist;
-        double weight1 = 1 - weight2;
-        return new ShooterSpec(
-                s1.getShooterAngle() * weight1 + s2.getShooterAngle() * weight2,
-                s1.getLeftSpeed() * weight1 + s2.getLeftSpeed() * weight2,
-                s1.getRightSpeed() * weight1 + s2.getRightSpeed() * weight2);
-    }
+  public ShooterSpec get(Translation2d toTarget) {
+    return new ShooterSpec(
+        interpolatorAngle.interpolate(toTarget.getX(), toTarget.getY()),
+        interpolatorSpeedL.interpolate(toTarget.getX(), toTarget.getY()),
+        interpolatorSpeedR.interpolate(toTarget.getX(), toTarget.getY()),
+        interpolatorOffset.interpolate(toTarget.getX(), toTarget.getY()));
+  }
 }
