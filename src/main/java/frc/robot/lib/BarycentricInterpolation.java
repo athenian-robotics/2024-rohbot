@@ -6,11 +6,11 @@ import io.github.jdiemke.triangulation.Triangle2D;
 import io.github.jdiemke.triangulation.Vector2D;
 import java.util.List;
 
-public class BilinearInterpolator {
+public class BarycentricInterpolation {
   private final DelaunayTriangulator triangulator;
   private final double[] z;
 
-  public BilinearInterpolator(double[] x, double[] y, double[] z) throws NotEnoughPointsException {
+  public BarycentricInterpolation(double[] x, double[] y, double[] z) throws NotEnoughPointsException {
     this.z = z;
 
     List<Vector2D> vertices = new java.util.ArrayList<>(List.of());
@@ -69,17 +69,13 @@ public class BilinearInterpolator {
     return !(dotProduct < 0) && !(dotProduct > bc.mag() * bc.mag()); // Outside the line segment
   }
 
-  private boolean equals(Vector2D a, Vector2D vector2D) {
-    return a.x == vector2D.x && a.y == vector2D.y;
-  }
-
   public static void main(String[] args) throws NotEnoughPointsException {
     // Example usage
     double[] xValues = {0, 0, 1};
     double[] yValues = {0, 1, 0};
     double[] zValues = {10, 20, 30};
 
-    BilinearInterpolator interpolator = new BilinearInterpolator(xValues, yValues, zValues);
+    BarycentricInterpolation interpolator = new BarycentricInterpolation(xValues, yValues, zValues);
 
     double result = interpolator.interpolate(0, 0);
     System.out.println("Interpolated value: " + result);

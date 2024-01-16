@@ -1,13 +1,13 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Translation2d;
-import frc.robot.lib.BilinearInterpolator;
+import frc.robot.lib.BarycentricInterpolation;
 
 public class ShooterDataTable {
-  private BilinearInterpolator interpolatorAngle;
-  private BilinearInterpolator interpolatorSpeedL;
-  private BilinearInterpolator interpolatorSpeedR;
-  private BilinearInterpolator interpolatorOffset;
+  private BarycentricInterpolation interpolatorAngle;
+  private BarycentricInterpolation interpolatorSpeedL;
+  private BarycentricInterpolation interpolatorSpeedR;
+  private BarycentricInterpolation interpolatorOffset;
 
   public ShooterDataTable(Translation2d[] points, ShooterSpec[] specs) {
     double[] x = new double[points.length];
@@ -25,10 +25,10 @@ public class ShooterDataTable {
       offset[i] = specs[i].offset();
     }
     try {
-      interpolatorAngle = new BilinearInterpolator(x, y, angle);
-      interpolatorSpeedL = new BilinearInterpolator(x, y, speedL);
-      interpolatorSpeedR = new BilinearInterpolator(x, y, speedR);
-      interpolatorOffset = new BilinearInterpolator(x, y, offset);
+      interpolatorAngle = new BarycentricInterpolation(x, y, angle);
+      interpolatorSpeedL = new BarycentricInterpolation(x, y, speedL);
+      interpolatorSpeedR = new BarycentricInterpolation(x, y, speedR);
+      interpolatorOffset = new BarycentricInterpolation(x, y, offset);
     } catch (Exception e) {
       e.printStackTrace();
     }
