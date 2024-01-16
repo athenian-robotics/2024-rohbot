@@ -1,10 +1,14 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.MutableMeasure.mutable;
+import static edu.wpi.first.units.Units.*;
+
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkRelativeEncoder;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -39,9 +43,11 @@ public class Shooter extends SubsystemBase {
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
+  private final MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
+  private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Minute).of(0));
   @Getter @Log.NT private State state = State.IDLE;
-  private SysIdRoutine routineL;
-  private SysIdRoutine routineR;
+  private final SysIdRoutine routineL;
+  private final SysIdRoutine routineR;
 
   public Shooter(ShooterDataTable table) {
     encoderL = motorL.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
@@ -69,14 +75,35 @@ public class Shooter extends SubsystemBase {
             MODEL_DEVIATION,
             ENCODER_DEVIATION,
             LOOPTIME);
-    //        routineL = new SysIdRoutine(
-    //                new SysIdRoutine.Config(),
-    //                new SysIdRoutine.Mechanism((Measure<Voltage> volts) ->
-    // motorL.setVoltage(volts.in(Volts)), encoderL, this, "left flywheel motor")
-    //        )
+    routineL =
+        new SysIdRoutine(
+            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+            new SysIdRoutine.Mechanism(
+                (Measure<Voltage> volts) -> motorL.setVoltage(volts.in(Volts)),
+                this::logL,
+                this,
+                "left-flywheel-motor"));
+    routineR =
+        new SysIdRoutine(
+                new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+            new SysIdRoutine.Mechanism(
+                (Measure<Voltage> volts) -> motorR.setVoltage(volts.in(Volts)),
+                this::logR,
+                this,
+                "right flywheel motor"));
   }
 
-  private void motorLLog(SysIdRoutineLog log) {}
+  private void logR(SysIdRoutineLog log) {
+    log.motor("right-flywheel-motor")
+        .voltage(appliedVoltage.mut_replace(motorL.getBusVoltage() * motorL.get(), Volts))
+        .angularVelocity(velocity.mut_replace(encoderL.getVelocity(), Rotations.per(Minute)));
+  }
+
+  private void logL(SysIdRoutineLog log) {
+    log.motor("left-flywheel-motor")
+        .voltage(appliedVoltage.mut_replace(motorR.getBusVoltage() * motorR.get(), Volts))
+        .angularVelocity(velocity.mut_replace(encoderR.getVelocity(), Rotations.per(Minute)));
+  }
 
   @Log
   private double getWheelSpeedL() {
@@ -108,23 +135,23 @@ public class Shooter extends SubsystemBase {
     return new InstantCommand(() -> state = State.TESTING);
   }
 
-  public Command sysId() {
-    return new InstantCommand(() -> state = State.SYSID);
-  }
-
   public Command sysIdQuasistaticL(SysIdRoutine.Direction direction) {
+    state = State.SYSID;
     return routineL.quasistatic(direction);
   }
 
   public Command sysIdDynamicL(SysIdRoutine.Direction direction) {
+    state = State.SYSID;
     return routineL.dynamic(direction);
   }
 
   public Command sysIdQuasistaticR(SysIdRoutine.Direction direction) {
+    state = State.SYSID;
     return routineR.quasistatic(direction);
   }
 
   public Command sysIdDynamicR(SysIdRoutine.Direction direction) {
+    state = State.SYSID;
     return routineR.dynamic(direction);
   }
 
@@ -147,6 +174,8 @@ public class Shooter extends SubsystemBase {
         sysL.set(spec.speedL());
         sysR.set(spec.speedR());
         break;
+      case SYSID:
+        break;
     }
     if (atSetpoint()) {
       state = State.READY;
@@ -158,6 +187,6 @@ public class Shooter extends SubsystemBase {
     READY, // at setpoint and within tolerance
     APPROACHING, // approaching setpoint
     TESTING, // for collecting shooter data table values
-    SYSID
+    SYSID, // for system identification
   }
 }
