@@ -85,7 +85,7 @@ public class Shooter extends SubsystemBase {
                 "left-flywheel-motor"));
     routineR =
         new SysIdRoutine(
-                new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
             new SysIdRoutine.Mechanism(
                 (Measure<Voltage> volts) -> motorR.setVoltage(volts.in(Volts)),
                 this::logR,

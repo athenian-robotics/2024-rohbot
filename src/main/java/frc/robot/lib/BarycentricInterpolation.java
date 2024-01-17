@@ -10,7 +10,8 @@ public class BarycentricInterpolation {
   private final DelaunayTriangulator triangulator;
   private final double[] z;
 
-  public BarycentricInterpolation(double[] x, double[] y, double[] z) throws NotEnoughPointsException {
+  public BarycentricInterpolation(double[] x, double[] y, double[] z)
+      throws NotEnoughPointsException {
     this.z = z;
 
     List<Vector2D> vertices = new java.util.ArrayList<>(List.of());
