@@ -39,12 +39,10 @@ public class Swerve extends SubsystemBase {
 
   public Command driveCommand(DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier headingX,
       DoubleSupplier headingY) {
-    // swerveDrive.setHeadingCorrection(true); // Normally you would want heading
-    // correction for this kind of control.
+    swerveDrive.setHeadingCorrection(true); 
     return run(() -> {
-      double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth controll out
-      double yInput = Math.pow(translationY.getAsDouble(), 3); // Smooth controll out
-      // Make the robot move
+      double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth control
+      double yInput = Math.pow(translationY.getAsDouble(), 3); // Smooth control
       driveFieldOriented(swerveDrive.swerveController.getTargetSpeeds(xInput, yInput,
           headingX.getAsDouble(),
           headingY.getAsDouble(),
