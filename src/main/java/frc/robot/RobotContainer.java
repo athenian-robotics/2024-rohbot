@@ -8,25 +8,30 @@ import java.io.File;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.event.EventLoop;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.lib.controllers.Thrustmaster;
 import frc.robot.subsystems.Swerve;
 
 public class RobotContainer {
   private final Swerve drivebase = new Swerve(new File(Filesystem.getDeployDirectory(),
       "swerve"));
 
-  XboxController driverXbox = new XboxController(0); // TODO: Replace with actual port #
   private final double LEFT_X_DEADBAND = 0.01;
   private final double LEFT_Y_DEADBAND = 0.01;
+  private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
+  private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
+  private final SendableChooser<String> autoChooser = new SendableChooser<>();
 
-  public RobotContainer() {
+  public RobotContainer(EventLoop loop) {
+    autoChooser.addOption("left note", null);
     Command driveFieldOrientedDirectAngle = drivebase.driveCommand(
-        () -> MathUtil.applyDeadband(driverXbox.getLeftY(), LEFT_Y_DEADBAND),
-        () -> MathUtil.applyDeadband(driverXbox.getLeftX(), LEFT_X_DEADBAND),
-        () -> driverXbox.getRightX(),
-        () -> driverXbox.getRightY());
+        () -> MathUtil.applyDeadband(leftThrustmaster.getY(), LEFT_Y_DEADBAND),
+        () -> MathUtil.applyDeadband(leftThrustmaster.getX(), LEFT_X_DEADBAND),
+        () -> rightThrustmaster.getX(),
+        () -> rightThrustmaster.getY());
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
     configureBindings();
   }

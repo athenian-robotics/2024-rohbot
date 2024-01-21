@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Optional;
 
 public class NoteDetector {
-    private static final Measure<Distance> CAMERA_HEIGHT = Units.Feet.of(1); // TODO: Set to actual value
-    private static final Rotation2d CAMERA_PITCH = new Rotation2d(0.0); // TODO: Set to actual value
+    private static final Measure<Distance> CAMERA_HEIGHT = Units.Inches.of(14.5);
+    private static final Rotation2d CAMERA_PITCH = new Rotation2d(0.0); 
     private final PhotonCamera camera;
     private final PoseEstimator poseEstimator;
 
@@ -27,7 +27,7 @@ public class NoteDetector {
         this.poseEstimator = poseEstimator;
     }
 
-    public Optional<List<Translation2d>> get () {
+    public Optional<List<Translation2d>> get() {
         PhotonPipelineResult result = camera.getLatestResult();
 
         if (result.hasTargets()) {
