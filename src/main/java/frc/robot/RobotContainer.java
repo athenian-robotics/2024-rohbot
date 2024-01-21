@@ -25,8 +25,7 @@ public class RobotContainer {
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
   private final SendableChooser<String> autoChooser = new SendableChooser<>();
 
-  public RobotContainer(EventLoop loop) {
-    autoChooser.addOption("left note", null);
+  public RobotContainer() {
     Command driveFieldOrientedDirectAngle = drivebase.driveCommand(
         () -> MathUtil.applyDeadband(leftThrustmaster.getY(), LEFT_Y_DEADBAND),
         () -> MathUtil.applyDeadband(leftThrustmaster.getX(), LEFT_X_DEADBAND),
