@@ -44,7 +44,7 @@ public class NoteDetector {
 
                 Translation2d translation = PhotonUtils.estimateCameraToTargetTranslation(distance.in(Units.Meters),
                         Rotation2d.fromDegrees(-target.getYaw()));
-                Translation2d estimatedPose = poseEstimator.getEstimatedPose();
+                Translation2d estimatedPose = poseEstimator.getPose();
                 if (estimatedPose != null) {
                     positions.add(estimatedPose.plus(translation));
                 }
