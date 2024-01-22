@@ -4,19 +4,13 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
 public class SwerveModule {
-  private static final double kWheelRadius = 0.0508; // TODO: Replace with real wheel radius
-  private static final int kEncoderResolution = 4096; // TODO: Replace with real encoder resolution
+  private static final double kWheelRadius = 0.0485;
+  private static final int kEncoderResolution = 4096;
 
   private final Encoder m_driveEncoder;
   private final Encoder m_turningEncoder;
