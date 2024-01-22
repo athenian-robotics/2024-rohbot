@@ -68,16 +68,8 @@ public class PoseEstimator implements Subsystem {
     }
 
     public Translation2d getPose() {
-        Optional<EstimatedRobotPose> estimatedRobotPose = photonPoseEstimator.update();
-        if (estimatedRobotPose.isPresent()) {
-            Pose3d pose3d = estimatedRobotPose.get().estimatedPose;
-            Translation2d translation = new Translation2d(pose3d.getX(), pose3d.getY());
-            swerveDrivePoseEstimator.addVisionMeasurement(new Pose2d(translation, gyro.getRotation2d()), Timer.getFPGATimestamp());
-            Pose2d swervePose2d = swerveDrivePoseEstimator.getEstimatedPosition();
-            return new Translation2d(swervePose2d.getX(), swervePose2d.getY());
-        } else {
-            return null;
-        }
+        Pose2d swervePose2d = swerveDrivePoseEstimator.getEstimatedPosition();
+        return new Translation2d(swervePose2d.getX(), swervePose2d.getY());
     }
 
     public SwerveModulePosition[] getCurrentSwerveModulePositions()
@@ -92,6 +84,12 @@ public class PoseEstimator implements Subsystem {
 
     @Override
     public void periodic() {
-        swerveDrivePoseEstimator.update(gyro.getRotation2d(), getCurrentSwerveModulePositions());
+        Optional<EstimatedRobotPose> estimatedRobotPose = photonPoseEstimator.update();
+        if (estimatedRobotPose.isPresent()) {
+            Pose3d pose3d = estimatedRobotPose.get().estimatedPose;
+            Translation2d translation = new Translation2d(pose3d.getX(), pose3d.getY());
+            swerveDrivePoseEstimator.addVisionMeasurement(new Pose2d(translation, gyro.getRotation2d()), Timer.getFPGATimestamp());
+            swerveDrivePoseEstimator.update(gyro.getRotation2d(), getCurrentSwerveModulePositions());
+        }
     }
 }
