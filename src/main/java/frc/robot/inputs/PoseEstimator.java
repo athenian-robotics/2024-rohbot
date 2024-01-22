@@ -54,7 +54,7 @@ public class PoseEstimator {
                 VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
     }
 
-    public Translation2d getEstimatedPose() {
+    public Translation2d getPose() {
         Optional<EstimatedRobotPose> estimatedRobotPose = photonPoseEstimator.update();
         if (estimatedRobotPose.isPresent()) {
             Pose3d pose3d = estimatedRobotPose.get().estimatedPose;
