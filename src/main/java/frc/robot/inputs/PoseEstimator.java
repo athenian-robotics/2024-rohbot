@@ -53,7 +53,7 @@ public class PoseEstimator implements Subsystem {
                 new Translation2d(0.3048, -0.3048),
                 new Translation2d(-0.3048, 0.3048),
                 new Translation2d(-0.3048, -0.3048));
-        gyro = new Pigeon2(4, "*"); // TODO: replace with device id
+        gyro = new Pigeon2(13, "*"); 
 
         aprilTagFieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
         robotToCam = new Transform3d(
