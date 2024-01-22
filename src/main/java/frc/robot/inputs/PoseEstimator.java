@@ -12,6 +12,7 @@ import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -48,14 +49,16 @@ public class PoseEstimator {
         // real cam pos
         photonPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE,
                 photonCamera, robotToCam);
-        swerveDrivePoseEstimator = new SwerveDrivePoseEstimator(m_kinematics, null, null, null, null, null);
+        swerveDrivePoseEstimator = new SwerveDrivePoseEstimator(m_kinematics, gyro.getRotation2d(), null, // TODO: add module positions
+                new Pose2d(0, 0, new Rotation2d()), VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5)),
+                VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
     }
 
     public Translation2d getEstimatedPose() {
         Optional<EstimatedRobotPose> estimatedRobotPose = photonPoseEstimator.update();
         if (estimatedRobotPose.isPresent()) {
             Pose3d pose3d = estimatedRobotPose.get().estimatedPose;
-            return new Translation2d(pose3d.getX(), pose3d.getY());
+            return new Translation2d(pose3d.getX(), pose3d.getY()); // TODO:  then feed PhotonPoseEstimator into SwerveDrivePoseEstimator via addVisionMeasurement() 
         } else {
             return null;
         }
