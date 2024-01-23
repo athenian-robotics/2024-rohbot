@@ -1,5 +1,3 @@
 package frc.robot;
 
-public class Superstructure {
-    
-}
+public class Superstructure {}
