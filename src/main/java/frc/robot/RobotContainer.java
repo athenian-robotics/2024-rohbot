@@ -20,7 +20,7 @@ public class RobotContainer {
   private final SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
-    // TODO: Fix this
+    // TODO: Fix this -- likely an issue with offset
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(
             () -> MathUtil.applyDeadband(leftThrustmaster.getY(), LEFT_Y_DEADBAND),
