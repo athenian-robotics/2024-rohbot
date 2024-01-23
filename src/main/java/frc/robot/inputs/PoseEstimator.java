@@ -48,6 +48,7 @@ public class PoseEstimator implements Subsystem {
         backLeftModule = new SwerveModule(0, 0, 0, 0);
         frontRightModule = new SwerveModule(0, 0, 0, 0);
         backRightModule = new SwerveModule(0, 0, 0, 0);
+
         m_kinematics = new SwerveDriveKinematics(
                 new Translation2d(0.3048, 0.3048),
                 new Translation2d(0.3048, -0.3048),
@@ -58,7 +59,7 @@ public class PoseEstimator implements Subsystem {
         aprilTagFieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
         robotToCam = new Transform3d(
                 new Translation3d(Units.inchesToMeters(14.5), Units.inchesToMeters(4.5), Units.inchesToMeters(18)),
-                new Rotation3d(0, 0, 0)); // TODO: Replace with real cam pos
+                new Rotation3d(0, 0, 0)); // TODO: Replace with real cam rotation
         photonPoseEstimator = new PhotonPoseEstimator(aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE,
                 photonCamera, robotToCam);
 
