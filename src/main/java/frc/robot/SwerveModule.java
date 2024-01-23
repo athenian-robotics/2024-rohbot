@@ -37,7 +37,6 @@ public class SwerveModule {
     m_turningEncoder.setDistancePerPulse(2 * Math.PI / kEncoderResolution);
   }
 
-
   public SwerveModulePosition getPosition() {
     return new SwerveModulePosition(
         m_driveEncoder.getDistance(), new Rotation2d(m_turningEncoder.getDistance()));
