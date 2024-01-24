@@ -105,12 +105,12 @@ public class Shooter extends SubsystemBase {
         .angularVelocity(velocity.mut_replace(encoderR.getVelocity(), Rotations.per(Minute)));
   }
 
-  @Log
+  @Log.NT
   private double getWheelSpeedL() {
     return encoderL.getVelocity();
   }
 
-  @Log
+  @Log.NT
   private double getWheelSpeedR() {
     return encoderR.getVelocity();
   }
