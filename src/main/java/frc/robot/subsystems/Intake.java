@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Intake extends SubsystemBase {
-  private static final int motorId = 0; // TODO: Fill out value
+  private static final int MOTOR_ID = 0; // TODO: Fill out value
   private static final Measure<Distance> NOTE_FOUND_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Distance> NOTE_PASSED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private final CANSparkMax motor;
@@ -24,7 +24,7 @@ public class Intake extends SubsystemBase {
   private State state;
 
   public Intake() {
-    motor = new CANSparkMax(motorId, CANSparkLowLevel.MotorType.kBrushless);
+    motor = new CANSparkMax(MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     sensor = new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard);
     state = State.NO_NOTE;
   }
