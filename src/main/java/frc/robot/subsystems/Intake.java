@@ -28,7 +28,7 @@ public class Intake extends SubsystemBase {
 
   public Intake() {
     motor = new CANSparkMax(MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    sensor = new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard);
+    sensor = new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
     state = State.NO_NOTE;
   }
 
