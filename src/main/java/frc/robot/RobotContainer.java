@@ -1,9 +1,7 @@
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.lib.controllers.Thrustmaster;
 import frc.robot.subsystems.Swerve;
@@ -16,10 +14,8 @@ public class RobotContainer {
   private final double LEFT_Y_DEADBAND = 0.01;
   private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
-  private final SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
-    // TODO: Fix this -- likely an issue with offset
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(
             () -> MathUtil.applyDeadband(leftThrustmaster.getY(), LEFT_Y_DEADBAND),
@@ -28,12 +24,11 @@ public class RobotContainer {
             () -> rightThrustmaster.getY());
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
     configureBindings();
-    autoChooser = AutoBuilder.buildAutoChooser();
   }
 
   private void configureBindings() {}
 
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
+    return null;
   }
 }
