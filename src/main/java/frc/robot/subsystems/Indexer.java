@@ -24,14 +24,14 @@ public class Indexer extends SubsystemBase {
   private static final double kV = 0; // TODO: Sysid
   private static final double kA = 0; // TODO: sysid
   private static final double GEAR_RATIO = 1; // TODO: fill
-  private static final double TICKS_TO_RAD = 2 * Math.PI / 2048 / GEAR_RATIO; // TODO: adjust for this year's robot
+  private static final double TICKS_TO_RAD =
+      2 * Math.PI / 2048 / GEAR_RATIO; // TODO: adjust for this year's robot
   private static final Measure<Distance> NOTE_LOADED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private final CANSparkMax indexMotor;
   private final CANSparkMax angleMotor;
   private final Rev2mDistanceSensor sensor;
   private final LinearSystemLoop loop;
-  @Getter
-  private State state;
+  @Getter private State state;
 
   //  private final Rev2mDistanceSensor sensor;
 
@@ -46,21 +46,23 @@ public class Indexer extends SubsystemBase {
   public Indexer() {
     indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     angleMotor = new CANSparkMax(ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    sensor = new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
+    sensor =
+        new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
-    KalmanFilter<N2, N1, N1> filter = new KalmanFilter<>(
+    KalmanFilter<N2, N1, N1> filter =
+        new KalmanFilter<>(
             Nat.N2(),
             Nat.N1(),
             sys,
             VecBuilder.fill(0.02, 0.02),
             VecBuilder.fill(TICKS_TO_RAD),
-            0.02
-    );
+            0.02);
 
-    LinearQuadraticRegulator<N2, N1, N1> controller = new LinearQuadraticRegulator<>(sys, VecBuilder.fill(0.0015, 0.02),
-            VecBuilder.fill(12), 0.02);
+    LinearQuadraticRegulator<N2, N1, N1> controller =
+        new LinearQuadraticRegulator<>(
+            sys, VecBuilder.fill(0.0015, 0.02), VecBuilder.fill(12), 0.02);
 
     loop = new LinearSystemLoop<>(sys, controller, filter, 12, 0.02);
   }
@@ -73,7 +75,8 @@ public class Indexer extends SubsystemBase {
       }
       case LOADING -> {
         indexMotor.set(1); // TODO: Tune
-        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches) < NOTE_LOADED_THRESHOLD.in(Units.Inches)) {
+        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
+            < NOTE_LOADED_THRESHOLD.in(Units.Inches)) {
           state = State.READY;
         }
       }
