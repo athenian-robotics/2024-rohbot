@@ -80,6 +80,10 @@ public class PoseEstimator implements Subsystem {
     return new Translation2d(swervePose2d.getX(), swervePose2d.getY());
   }
 
+  public Translation2d translationToSpeaker() {
+    return new Translation2d(); // TODO: Implement
+  }
+
   public SwerveModulePosition[] getCurrentSwerveModulePositions() {
     return new SwerveModulePosition[] {
       frontLeftModule.getPosition(),

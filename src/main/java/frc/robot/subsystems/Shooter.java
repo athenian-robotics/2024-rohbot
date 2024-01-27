@@ -49,6 +49,8 @@ public class Shooter extends SubsystemBase {
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
 
+  private Translation2d translationToSpeaker;
+
   public Shooter(ShooterDataTable table) {
     encoderL = motorL.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
     encoderR = motorR.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
@@ -119,8 +121,13 @@ public class Shooter extends SubsystemBase {
     return Math.abs(sysL.getError()) < MAX_ERROR && Math.abs(sysR.getError()) < MAX_ERROR;
   }
 
-  public Command requestShot() {
-    return new InstantCommand(() -> state = State.APPROACHING, this);
+  public Command requestShot(Translation2d translationToSpeaker) {
+    return new InstantCommand(
+        () -> {
+          state = State.APPROACHING;
+          this.translationToSpeaker = translationToSpeaker;
+        },
+        this);
   }
 
   public Command idle() {
@@ -169,8 +176,7 @@ public class Shooter extends SubsystemBase {
         break;
       case APPROACHING:
         // send limelight data to data table, send result to system
-        Translation2d toSpeaker = new Translation2d(); // TODO: get poseestimator data
-        ShooterSpec spec = table.get(toSpeaker);
+        ShooterSpec spec = table.get(translationToSpeaker);
         sysL.set(spec.speedL());
         sysR.set(spec.speedR());
         break;
