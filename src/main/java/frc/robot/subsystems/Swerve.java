@@ -13,15 +13,13 @@ import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 public class Swerve extends SubsystemBase {
-  private final double maximumSpeed =
-      Units.feetToMeters(20); // TODO: replace dummy value with the real value of the max
+  private final double maximumSpeed = Units.feetToMeters(20);
   // speed in m/s
   private SwerveDrive swerveDrive;
 
   public Swerve(File swerveJsonDirectory) {
     // Angle conversion factor = 360 / (GEAR RATIO * ENCODER RESOLUTION)
-    double angleConversionFactor =
-        SwerveMath.calculateDegreesPerSteeringRotation(12.8, 4096); // TODO: Replace dummy values
+    double angleConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(12.8, 4096);
     // with real values
     // Motor conversion factor is (PI * WHEEL DIAMETER IN METERS) / (GEAR RATIO *
     // ENCODER RESOLUTION).
@@ -35,7 +33,6 @@ public class Swerve extends SubsystemBase {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    swerveDrive.setHeadingCorrection(false);
   }
 
   public Command driveCommand(
@@ -43,7 +40,7 @@ public class Swerve extends SubsystemBase {
       DoubleSupplier translationY,
       DoubleSupplier headingX,
       DoubleSupplier headingY) {
-    swerveDrive.setHeadingCorrection(true);
+    swerveDrive.setHeadingCorrection(false);
     return run(
         () -> {
           double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth control
