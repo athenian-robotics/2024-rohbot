@@ -12,6 +12,8 @@ import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
 import lombok.Getter;
@@ -30,6 +32,7 @@ public class Indexer extends SubsystemBase {
   private static final Measure<Angle> TICKS_TO_ANGLE = null; // TODO: adjust for this year's robot
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Distance> NOTE_LOADED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
+  private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Seconds).of(50);
   private final CANSparkMax indexMotor;
   private final CANSparkMax angleMotor;
@@ -41,7 +44,7 @@ public class Indexer extends SubsystemBase {
 
   //  private final Rev2mDistanceSensor sensor;
 
-  enum State {
+  public enum State {
     FIRING,
     LOADING,
     LOADED,
@@ -87,6 +90,10 @@ public class Indexer extends SubsystemBase {
             ROBOT_TIME_STEP.in(Units.Seconds));
   }
 
+  public Command startLoading() {
+    return new InstantCommand(() -> state = State.LOADING, this);
+  }
+
   @Override
   public void periodic() {
     switch (state) {
@@ -97,21 +104,28 @@ public class Indexer extends SubsystemBase {
         indexMotor.set(1); // TODO: Tune
         if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
             < NOTE_LOADED_THRESHOLD.in(Units.Inches)) {
-          state = State.READY;
+          state = State.LOADED;
         }
       }
       case LOADED -> {
         indexMotor.set(0);
         loop.setNextR(table.get(translationToSpeaker).angle());
+        if (loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
+                && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
+          state = State.READY;
+        }
       }
       case FIRING -> {
         indexMotor.set(1); // TODO: Tune
+        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches) < SHOT_FIRED_THRESHOLD.in(Units.Inches)) {
+          state = State.EMPTY;
+        }
       }
     }
-    loop.correct(VecBuilder.fill(angleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
+    loop.correct(
+        VecBuilder.fill(angleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
     loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
-    angleMotor.set(loop.getU(0)
-            + kS * Math.signum(loop.getNextR(1)
-            + kG * Math.cos(loop.getNextR(0))));
+    angleMotor.set(
+        loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
   }
 }
