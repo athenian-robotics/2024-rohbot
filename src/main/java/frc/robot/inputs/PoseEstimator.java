@@ -57,10 +57,10 @@ public class PoseEstimator implements Subsystem {
   public void periodic() {
     Optional<EstimatedRobotPose> estimatedRobotPose = photonPoseEstimator.update();
     if (estimatedRobotPose.isPresent()) {
-      Pose3d pose3d = estimatedRobotPose.get().estimatedPose;
-      Translation2d translation = new Translation2d(pose3d.getX(), pose3d.getY());
+      Pose3d photonPose = estimatedRobotPose.get().estimatedPose;
+      Translation2d photonPoseTranslation = new Translation2d(photonPose.getX(), photonPose.getY());
       swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
-          new Pose2d(translation, gyro.getRotation2d()), Timer.getFPGATimestamp());
+          new Pose2d(photonPoseTranslation, gyro.getRotation2d()), Timer.getFPGATimestamp());
       swerveDrive.swerveDrivePoseEstimator.update(
           gyro.getRotation2d(), swerveDrive.getModulePositions());
     }
