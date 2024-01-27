@@ -1,5 +1,6 @@
 package frc.robot;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.Indexer;
@@ -30,5 +31,9 @@ public class Superstructure extends SubsystemBase {
             toDo.addCommands(intake.shotFired());
         }
         toDo.schedule();
+    }
+
+    public Command fireShot() {
+        return shooter.waitUntilReady().andThen(indexer.waitUntilReady()).andThen(indexer.fire());
     }
 }

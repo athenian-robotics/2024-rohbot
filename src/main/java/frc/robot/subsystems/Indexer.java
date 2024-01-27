@@ -15,6 +15,7 @@ import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.ShooterDataTable;
 import lombok.Getter;
 
@@ -92,6 +93,14 @@ public class Indexer extends SubsystemBase {
 
   public Command startLoading() {
     return new InstantCommand(() -> state = State.LOADING, this);
+  }
+
+  public Command waitUntilReady() {
+    return new WaitUntilCommand(() -> state == State.READY);
+  }
+
+  public Command fire() {
+    return new InstantCommand(() -> state = State.FIRING);
   }
 
   @Override

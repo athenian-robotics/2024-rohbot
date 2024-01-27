@@ -21,6 +21,7 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import swervelib.SwerveDrive;
 
 public class PoseEstimator implements Subsystem {
+  private static final Translation2d SPEAKER_POSE = new Translation2d(); // TODO: Fill
   private final AprilTagFieldLayout aprilTagFieldLayout;
   private final Transform3d robotToCam;
   private final PhotonPoseEstimator photonPoseEstimator;
@@ -50,7 +51,7 @@ public class PoseEstimator implements Subsystem {
   }
 
   public Translation2d translationToSpeaker() {
-    return new Translation2d(); // TODO: Implement
+    return getPose().minus(SPEAKER_POSE);
   }
 
   @Override
