@@ -12,8 +12,8 @@ public class RobotContainer {
 
   private final double LEFT_X_DEADBAND = 0.01;
   private final double LEFT_Y_DEADBAND = 0.01;
-  private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
-  private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
+  private static final Thrustmaster leftThrustmaster = new Thrustmaster(1);
+  private static final Thrustmaster rightThrustmaster = new Thrustmaster(0);
 
   public RobotContainer() {
     Command driveFieldOrientedDirectAngle =
