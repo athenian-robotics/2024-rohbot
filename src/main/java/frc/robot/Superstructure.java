@@ -12,13 +12,11 @@ public class Superstructure extends SubsystemBase {
     private final Intake intake;
     private final Indexer indexer;
     private final Shooter shooter;
-    private final Swerve swerve;
 
     public Superstructure (Intake intake, Indexer indexer, Shooter shooter, Swerve swerve) {
         this.intake = intake;
         this.indexer = indexer;
         this.shooter = shooter;
-        this.swerve = swerve;
     }
 
     @Override

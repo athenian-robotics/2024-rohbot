@@ -15,7 +15,6 @@ import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.ShooterDataTable;
 import lombok.Getter;
 
@@ -54,7 +53,7 @@ public class Indexer extends SubsystemBase {
   }
 
   public Indexer(ShooterDataTable table) {
-    indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless); 
     angleMotor = new CANSparkMax(ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     this.table = table;
     sensor =
@@ -96,11 +95,11 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command waitUntilReady() {
-    return new WaitUntilCommand(() -> state == State.READY);
+    return new InstantCommand(() -> state = State.READY, this);
   }
 
   public Command fire() {
-    return new InstantCommand(() -> state = State.FIRING);
+    return new InstantCommand(() -> state = State.FIRING, this);
   }
 
   @Override
@@ -120,13 +119,14 @@ public class Indexer extends SubsystemBase {
         indexMotor.set(0);
         loop.setNextR(table.get(translationToSpeaker).angle());
         if (loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
-                && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
+            && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
           state = State.READY;
         }
       }
       case FIRING -> {
         indexMotor.set(1); // TODO: Tune
-        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches) < SHOT_FIRED_THRESHOLD.in(Units.Inches)) {
+        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
+            < SHOT_FIRED_THRESHOLD.in(Units.Inches)) {
           state = State.EMPTY;
         }
       }

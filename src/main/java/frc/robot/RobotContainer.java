@@ -10,10 +10,10 @@ import java.io.File;
 public class RobotContainer {
   private final Swerve drivebase = new Swerve(new File(Filesystem.getDeployDirectory(), "swerve"));
 
-  private final double LEFT_X_DEADBAND = 0.01;
-  private final double LEFT_Y_DEADBAND = 0.01;
-  private static final Thrustmaster leftThrustmaster = new Thrustmaster(1);
-  private static final Thrustmaster rightThrustmaster = new Thrustmaster(0);
+  private final double LEFT_X_DEADBAND = 0.001;
+  private final double LEFT_Y_DEADBAND = 0.001;
+  private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
+  private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
 
   public RobotContainer() {
     Command driveFieldOrientedDirectAngle =
