@@ -1,6 +1,5 @@
 package frc.robot;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.lib.controllers.Thrustmaster;
@@ -18,10 +17,9 @@ public class RobotContainer {
   public RobotContainer() {
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(
-            () -> MathUtil.applyDeadband(leftThrustmaster.getY(), LEFT_Y_DEADBAND),
-            () -> MathUtil.applyDeadband(leftThrustmaster.getX(), LEFT_X_DEADBAND),
-            () -> rightThrustmaster.getX(),
-            () -> rightThrustmaster.getY());
+            () -> leftThrustmaster.getY(),
+            () -> leftThrustmaster.getX(),
+            () -> rightThrustmaster.getX());
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
     configureBindings();
   }

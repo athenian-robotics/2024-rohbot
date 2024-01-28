@@ -9,29 +9,30 @@ import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 
 public class Superstructure extends SubsystemBase {
-    private final Intake intake;
-    private final Indexer indexer;
-    private final Shooter shooter;
+  private final Intake intake;
+  private final Indexer indexer;
+  private final Shooter shooter;
 
-    public Superstructure (Intake intake, Indexer indexer, Shooter shooter, Swerve swerve) {
-        this.intake = intake;
-        this.indexer = indexer;
-        this.shooter = shooter;
-    }
+  public Superstructure(Intake intake, Indexer indexer, Shooter shooter, Swerve swerve) {
+    this.intake = intake;
+    this.indexer = indexer;
+    this.shooter = shooter;
+  }
 
-    @Override
-    public void periodic() {
-        ParallelCommandGroup toDo = new ParallelCommandGroup();
-        if (intake.getState() == Intake.State.NOTE_FOUND && indexer.getState() != Indexer.State.LOADING) {
-            toDo.addCommands(indexer.startLoading());
-        }
-        if (indexer.getState() == Indexer.State.EMPTY && intake.getState() != Intake.State.NO_NOTE) {
-            toDo.addCommands(intake.shotFired());
-        }
-        toDo.schedule();
+  @Override
+  public void periodic() {
+    ParallelCommandGroup toDo = new ParallelCommandGroup();
+    if (intake.getState() == Intake.State.NOTE_FOUND
+        && indexer.getState() != Indexer.State.LOADING) {
+      toDo.addCommands(indexer.startLoading());
     }
+    if (indexer.getState() == Indexer.State.EMPTY && intake.getState() != Intake.State.NO_NOTE) {
+      toDo.addCommands(intake.shotFired());
+    }
+    toDo.schedule();
+  }
 
-    public Command fireShot() {
-        return shooter.waitUntilReady().andThen(indexer.waitUntilReady()).andThen(indexer.fire());
-    }
+  public Command fireShot() {
+    return shooter.waitUntilReady().andThen(indexer.waitUntilReady()).andThen(indexer.fire());
+  }
 }

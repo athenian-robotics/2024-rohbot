@@ -1,6 +1,6 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -36,29 +36,18 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command driveCommand(
-      DoubleSupplier translationX,
-      DoubleSupplier translationY,
-      DoubleSupplier headingX,
-      DoubleSupplier headingY) {
+      DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angSped) {
     swerveDrive.setHeadingCorrection(false);
     return run(
         () -> {
           double xInput = Math.pow(translationX.getAsDouble(), 3); // Smooth control
           double yInput = Math.pow(translationY.getAsDouble(), 3); // Smooth control
-          driveFieldOriented(
-              swerveDrive.swerveController.getTargetSpeeds(
-                  xInput,
-                  yInput,
-                  headingX.getAsDouble(),
-                  headingY.getAsDouble(),
-                  swerveDrive.getYaw().getRadians(),
-                  swerveDrive.getMaximumVelocity()));
+          swerveDrive.drive(
+              new Translation2d(xInput * 20, yInput * 20),
+              angSped.getAsDouble() * 20 / 1.07,
+              true,
+              false);
         });
   }
-
-  public void driveFieldOriented(ChassisSpeeds velocity) {
-    swerveDrive.driveFieldOriented(velocity);
-  }
-
   // TODO: Implement a command to face speaker when shooting
 }

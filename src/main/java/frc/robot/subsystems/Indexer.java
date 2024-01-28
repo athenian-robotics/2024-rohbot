@@ -53,7 +53,7 @@ public class Indexer extends SubsystemBase {
   }
 
   public Indexer(ShooterDataTable table) {
-    indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless); 
+    indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     angleMotor = new CANSparkMax(ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     this.table = table;
     sensor =
