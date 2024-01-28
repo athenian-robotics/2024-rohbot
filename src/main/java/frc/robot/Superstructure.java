@@ -22,11 +22,10 @@ public class Superstructure extends SubsystemBase {
   @Override
   public void periodic() {
     ParallelCommandGroup toDo = new ParallelCommandGroup();
-    if (intake.getState() == Intake.State.NOTE_FOUND
-        && indexer.getState() != Indexer.State.LOADING) {
+    if (intake.isNoteFound() && indexer.isLoading()) {
       toDo.addCommands(indexer.startLoading());
     }
-    if (indexer.getState() == Indexer.State.EMPTY && intake.getState() != Intake.State.NO_NOTE) {
+    if (!intake.isNoNote() && indexer.isEmpty()) {
       toDo.addCommands(intake.shotFired());
     }
     toDo.schedule();

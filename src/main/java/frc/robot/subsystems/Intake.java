@@ -18,11 +18,7 @@ public class Intake extends SubsystemBase {
   private final CANSparkMax motor;
   private final Rev2mDistanceSensor sensor;
 
-  public enum State {
-    NO_NOTE,
-    NOTE_FOUND,
-    NOTE_PASSED
-  }
+
 
   @Getter private State state;
 
@@ -31,6 +27,14 @@ public class Intake extends SubsystemBase {
     sensor =
         new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
     state = State.NO_NOTE;
+  }
+
+  public boolean isNoteFound() {
+    return this.getState() == State.NOTE_FOUND;
+  }
+
+  public boolean isNoNote() {
+    return this.getState() == State.NO_NOTE;
   }
 
   public Command shotFired() {
@@ -57,5 +61,11 @@ public class Intake extends SubsystemBase {
       case NOTE_PASSED:
         motor.set(0);
     }
+  }
+
+  private enum State {
+    NO_NOTE,
+    NOTE_FOUND,
+    NOTE_PASSED
   }
 }
