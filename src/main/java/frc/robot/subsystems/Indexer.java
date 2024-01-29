@@ -84,8 +84,16 @@ public class Indexer extends SubsystemBase {
     return this.getState() == State.LOADING;
   }
 
+  public boolean isLoaded() {
+    return this.getState() == State.LOADED;
+  }
+
   public boolean isEmpty() {
     return this.getState() == State.EMPTY;
+  }
+
+  public boolean isInactive() {
+    return this.getState() == State.EMPTY && !(this.getState() == State.LOADING) && !(this.getState() == State.LOADED);
   }
 
   public Command startLoading() {

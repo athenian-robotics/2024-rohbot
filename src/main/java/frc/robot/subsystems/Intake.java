@@ -37,7 +37,11 @@ public class Intake extends SubsystemBase {
     return this.getState() == State.NO_NOTE;
   }
 
-  public Command shotFired() {
+  public boolean isNotePassed() {
+    return this.getState() == State.NOTE_PASSED;
+  }
+
+  public Command startIntake() {
     return new InstantCommand(() -> state = State.NO_NOTE, this);
   }
 
