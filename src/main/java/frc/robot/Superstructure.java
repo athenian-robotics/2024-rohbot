@@ -32,8 +32,6 @@ public class Superstructure extends SubsystemBase {
       toDo.addCommands(intake.startIntake());
     }
 
-    toDo.addCommands(fireShot());
-
     toDo.schedule();
   }
 
