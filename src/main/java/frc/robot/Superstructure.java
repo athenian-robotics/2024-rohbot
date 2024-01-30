@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.subsystems.Indexer;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
@@ -31,8 +32,6 @@ public class Superstructure extends SubsystemBase {
     if (indexer.isInactive() && intake.isNotePassed()) { 
       toDo.addCommands(intake.startIntake());
     }
-
-    toDo.addCommands(fireShot());
 
     toDo.schedule();
   }

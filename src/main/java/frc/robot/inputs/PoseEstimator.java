@@ -10,6 +10,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import java.io.IOException;
@@ -34,17 +35,14 @@ public class PoseEstimator implements Subsystem {
   public PoseEstimator(PhotonCamera photonCamera, SwerveDrive swerveDrive) throws IOException {
     this.swerveDrive = swerveDrive;
     gyro = new Pigeon2(13, "*");
-    aprilTagFieldLayout =
-        AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
+    aprilTagFieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
 
-    robotToCam =
-        new Transform3d(
-            new Translation3d(
-                Units.inchesToMeters(14.5), Units.inchesToMeters(4.5), Units.inchesToMeters(18)),
-            new Rotation3d(0, 0, 0)); // TODO: Replace with real cam rotation
-    photonPoseEstimator =
-        new PhotonPoseEstimator(
-            aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE, photonCamera, robotToCam);
+    robotToCam = new Transform3d(
+        new Translation3d(
+            Units.inchesToMeters(14.5), Units.inchesToMeters(4.5), Units.inchesToMeters(18)),
+        new Rotation3d(0, 0, 0)); // TODO: Replace with real cam rotation
+    photonPoseEstimator = new PhotonPoseEstimator(
+        aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE, photonCamera, robotToCam);
   }
 
   public Translation2d getPosition() {
@@ -52,12 +50,18 @@ public class PoseEstimator implements Subsystem {
     return new Translation2d(swervePose2d.getX(), swervePose2d.getY());
   }
 
+  public Pose2d getPose() {
+    Pose2d swervePose2d = swerveDrive.swerveDrivePoseEstimator.getEstimatedPosition();
+    return new Pose2d(swervePose2d.getX(), swervePose2d.getY(), gyro.getRotation2d());
+  }
+
   public Translation2d translationToSpeaker() {
-    if (getPosition().getDistance(BLUE_SPEAKER_POSITION)
-        < getPosition().getDistance(RED_SPEAKER_POSITION)) {
-      return BLUE_SPEAKER_POSITION.minus(getPosition());
+    var alliance = DriverStation.getAlliance();
+
+    if (alliance.isPresent() && alliance.get() == DriverStation.Alliance.Red) {
+      return RED_SPEAKER_POSITION.minus(getPosition());
     }
-    return RED_SPEAKER_POSITION.minus(getPosition());
+    return BLUE_SPEAKER_POSITION.minus(getPosition());
   }
 
   @Override
