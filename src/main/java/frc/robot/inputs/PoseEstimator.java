@@ -21,7 +21,8 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import swervelib.SwerveDrive;
 
 public class PoseEstimator implements Subsystem {
-  private static final Translation2d SPEAKER_POSE = new Translation2d(); // TODO: Fill
+  private static final Translation2d BLUE_SPEAKER_POSITION = new Translation2d(-1.5, 218.42);
+  private static final Translation2d RED_SPEAKER_POSITION = new Translation2d(652.73, 218.42);
   private final AprilTagFieldLayout aprilTagFieldLayout;
   private final Transform3d robotToCam;
   private final PhotonPoseEstimator photonPoseEstimator;
@@ -33,9 +34,9 @@ public class PoseEstimator implements Subsystem {
   public PoseEstimator(PhotonCamera photonCamera, SwerveDrive swerveDrive) throws IOException {
     this.swerveDrive = swerveDrive;
     gyro = new Pigeon2(13, "*");
-
     aprilTagFieldLayout =
         AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
+
     robotToCam =
         new Transform3d(
             new Translation3d(
@@ -46,13 +47,17 @@ public class PoseEstimator implements Subsystem {
             aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE, photonCamera, robotToCam);
   }
 
-  public Translation2d getPose() {
+  public Translation2d getPosition() {
     Pose2d swervePose2d = swerveDrive.swerveDrivePoseEstimator.getEstimatedPosition();
     return new Translation2d(swervePose2d.getX(), swervePose2d.getY());
   }
 
   public Translation2d translationToSpeaker() {
-    return getPose().minus(SPEAKER_POSE);
+    if (getPosition().getDistance(BLUE_SPEAKER_POSITION)
+        < getPosition().getDistance(RED_SPEAKER_POSITION)) {
+      return BLUE_SPEAKER_POSITION.minus(getPosition());
+    }
+    return RED_SPEAKER_POSITION.minus(getPosition());
   }
 
   @Override
@@ -61,6 +66,7 @@ public class PoseEstimator implements Subsystem {
     if (estimatedRobotPose.isPresent()) {
       Pose3d photonPose = estimatedRobotPose.get().estimatedPose;
       Translation2d currentRobotPosition = new Translation2d(photonPose.getX(), photonPose.getY());
+
       if (lastKnownPosition != currentRobotPosition) {
         swerveDrive.swerveDrivePoseEstimator.addVisionMeasurement(
             new Pose2d(currentRobotPosition, gyro.getRotation2d()), Timer.getFPGATimestamp());

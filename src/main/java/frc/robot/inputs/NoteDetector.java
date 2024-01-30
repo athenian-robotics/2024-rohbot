@@ -5,7 +5,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.units.Units.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,7 +44,7 @@ public class NoteDetector {
         Translation2d translation =
             PhotonUtils.estimateCameraToTargetTranslation(
                 distance.in(Units.Meters), Rotation2d.fromDegrees(-target.getYaw()));
-        Translation2d estimatedPose = poseEstimator.getPose();
+        Translation2d estimatedPose = poseEstimator.getPosition();
         if (estimatedPose != null) {
           positions.add(estimatedPose.plus(translation));
         }
