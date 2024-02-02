@@ -133,6 +133,22 @@ public class Swerve extends SubsystemBase {
                 .angularVelocity(velocity.mut_replace(gyro.getRate(), DegreesPerSecond));
     }
 
+    public Command SysIdQuasiLinear(SysIdRoutine.Direction direction) {
+      return linearRoutine.quasistatic(direction);
+    }
+
+    public Command SysIdDynamicLinear(SysIdRoutine.Direction direction) {
+      return linearRoutine.dynamic(direction);
+    }
+
+    public Command SysIdQuasiAngular(SysIdRoutine.Direction direction) {
+      return angularRoutine.quasistatic(direction);
+    }
+
+    public Command SysIdDynamicAngular(SysIdRoutine.Direction direction) {
+      return angularRoutine.dynamic(direction);
+    }
+
 //  public Command driveCommand(
 //      DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angSped) {
 //    swerveDrive.setHeadingCorrection(false);
