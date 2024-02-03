@@ -18,8 +18,6 @@ public class Intake extends SubsystemBase {
   private final CANSparkMax motor;
   private final Rev2mDistanceSensor sensor;
 
-
-
   @Getter private State state;
 
   public Intake() {
