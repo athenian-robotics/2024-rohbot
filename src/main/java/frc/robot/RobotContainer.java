@@ -20,8 +20,8 @@ public class RobotContainer {
   public RobotContainer() {
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(
-            () -> leftThrustmaster.getY(),
-            () -> leftThrustmaster.getX(),
+            () -> -leftThrustmaster.getY(),
+            () -> -leftThrustmaster.getX(),
             () -> rightThrustmaster.getX());
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
     configureBindings();
