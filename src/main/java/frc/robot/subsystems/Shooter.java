@@ -100,13 +100,13 @@ public class Shooter extends SubsystemBase {
 
   private void logR(SysIdRoutineLog log) {
     log.motor("right-flywheel-motor")
-            .voltage(appliedVoltage.mut_replace(driveL.getMotorVoltage().getValue() * driveL.get(), Volts))
+            .voltage(appliedVoltage.mut_replace(driveL.getSupplyVoltage().getValue() * driveL.get(), Volts))
             .angularVelocity(velocity.mut_replace(driveL.getVelocity().getValue(), Rotations.per(Second)));
   }
 
   private void logL(SysIdRoutineLog log) {
     log.motor("left-flywheel-motor")
-            .voltage(appliedVoltage.mut_replace(driveR.getMotorVoltage().getValue() * driveR.get(), Volts))
+            .voltage(appliedVoltage.mut_replace(driveR.getSupplyVoltage().getValue() * driveR.get(), Volts))
             .angularVelocity(velocity.mut_replace(driveR.getVelocity().getValue(), Rotations.per(Second)));
   }
 
