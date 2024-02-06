@@ -12,16 +12,20 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import lombok.Getter;
 
 public class Intake extends SubsystemBase {
-  private static final int MOTOR_ID = 0; // TODO: Fill out value
+  private static final int LEAD_MOTOR_ID = 0; // TODO: Fill out value
+  private static final int FOLLOW_MOTOR_ID = 0; // TODO: Fill
   private static final Measure<Distance> NOTE_FOUND_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Distance> NOTE_PASSED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
-  private final CANSparkMax motor;
+  private final CANSparkMax leadMotor;
+  private final CANSparkMax followMotor;
   private final Rev2mDistanceSensor sensor;
 
   @Getter private State state;
 
   public Intake() {
-    motor = new CANSparkMax(MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    leadMotor = new CANSparkMax(LEAD_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    followMotor = new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    followMotor.follow(leadMotor);
     sensor =
         new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
     state = State.NO_NOTE;
@@ -47,21 +51,21 @@ public class Intake extends SubsystemBase {
   public void periodic() {
     switch (state) {
       case NO_NOTE:
-        motor.set(1); // TODO: Tune speed
+        leadMotor.set(1); // TODO: Tune speed
         if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
             < NOTE_FOUND_THRESHOLD.in(Units.Inches)) {
           state = State.NOTE_FOUND;
         }
         break;
       case NOTE_FOUND:
-        motor.set(1); // TODO: Tune
+        leadMotor.set(1); // TODO: Tune
         if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
             > NOTE_PASSED_THRESHOLD.in(Units.Inches)) {
           state = State.NOTE_PASSED;
         }
         break;
       case NOTE_PASSED:
-        motor.set(0);
+        leadMotor.set(0);
     }
   }
 

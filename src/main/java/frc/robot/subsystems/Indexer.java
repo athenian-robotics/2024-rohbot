@@ -21,7 +21,8 @@ import lombok.Getter;
 
 public class Indexer extends SubsystemBase {
   private static final int INDEXER_MOTOR_ID = 0; // TODO: ADD MOTOR PORTS ACCURATELY
-  private static final int ANGLE_MOTOR_ID = 0; // TODO: port
+  private static final int LEAD_ANGLE_MOTOR_ID = 0; // TODO: port
+  private static final int FOLLOW_ANGLE_MOTOR_ID = 0; // TODO: number
   private static final double kV = 0; // TODO: Sysid
   private static final double kA = 0; // TODO: sysid
   private static final double kS = 0;
@@ -36,7 +37,8 @@ public class Indexer extends SubsystemBase {
   private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Seconds).of(50);
   private final CANSparkMax indexMotor;
-  private final CANSparkMax angleMotor;
+  private final CANSparkMax leadAngleMotor;
+  private final CANSparkMax followAngleMotor;
   private final Rev2mDistanceSensor sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
@@ -47,7 +49,9 @@ public class Indexer extends SubsystemBase {
 
   public Indexer(ShooterDataTable table) {
     indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    angleMotor = new CANSparkMax(ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    followAngleMotor = new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    followAngleMotor.follow(leadAngleMotor);
     this.table = table;
     sensor =
         new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
@@ -143,9 +147,9 @@ public class Indexer extends SubsystemBase {
       }
     }
     loop.correct(
-        VecBuilder.fill(angleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
+        VecBuilder.fill(leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
     loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
-    angleMotor.set(
+    leadAngleMotor.set(
         loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
   }
 
