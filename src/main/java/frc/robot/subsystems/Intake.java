@@ -27,7 +27,7 @@ public class Intake extends SubsystemBase {
     followMotor = new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followMotor.follow(leadMotor);
     sensor =
-            new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
+        new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
     state = State.NO_NOTE;
   }
 
@@ -53,14 +53,14 @@ public class Intake extends SubsystemBase {
       case NO_NOTE:
         leadMotor.set(1); // TODO: Tune speed
         if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
-                < NOTE_FOUND_THRESHOLD.in(Units.Inches)) {
+            < NOTE_FOUND_THRESHOLD.in(Units.Inches)) {
           state = State.NOTE_FOUND;
         }
         break;
       case NOTE_FOUND:
         leadMotor.set(1); // TODO: Tune
         if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
-                > NOTE_PASSED_THRESHOLD.in(Units.Inches)) {
+            > NOTE_PASSED_THRESHOLD.in(Units.Inches)) {
           state = State.NOTE_PASSED;
         }
         break;

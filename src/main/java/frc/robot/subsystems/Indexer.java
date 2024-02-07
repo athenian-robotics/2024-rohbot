@@ -50,41 +50,42 @@ public class Indexer extends SubsystemBase {
   public Indexer(ShooterDataTable table) {
     indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    followAngleMotor = new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    followAngleMotor =
+        new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followAngleMotor.follow(leadAngleMotor);
     this.table = table;
     sensor =
-            new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
+        new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
     KalmanFilter<N2, N1, N1> filter =
-            new KalmanFilter<>(
-                    Nat.N2(),
-                    Nat.N1(),
-                    sys,
-                    VecBuilder.fill(
-                            ANGLE_STANDARD_DEVIATION.in(Units.Radians),
-                            ANGLE_SPEED_STANDARD_DEVIATION.in(Units.RadiansPerSecond)),
-                    VecBuilder.fill(TICKS_TO_ANGLE.in(Units.Radians)),
-                    ROBOT_TIME_STEP.in(Units.Seconds));
+        new KalmanFilter<>(
+            Nat.N2(),
+            Nat.N1(),
+            sys,
+            VecBuilder.fill(
+                ANGLE_STANDARD_DEVIATION.in(Units.Radians),
+                ANGLE_SPEED_STANDARD_DEVIATION.in(Units.RadiansPerSecond)),
+            VecBuilder.fill(TICKS_TO_ANGLE.in(Units.Radians)),
+            ROBOT_TIME_STEP.in(Units.Seconds));
 
     LinearQuadraticRegulator<N2, N1, N1> controller =
-            new LinearQuadraticRegulator<>(
-                    sys,
-                    VecBuilder.fill(
-                            ANGLE_ERROR_TOLERANCE.in(Units.Radians),
-                            ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)),
-                    VecBuilder.fill(MAX_ANGLE_MOTOR_VOLTAGE.in(Units.Volts)),
-                    ROBOT_TIME_STEP.in(Units.Seconds));
+        new LinearQuadraticRegulator<>(
+            sys,
+            VecBuilder.fill(
+                ANGLE_ERROR_TOLERANCE.in(Units.Radians),
+                ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)),
+            VecBuilder.fill(MAX_ANGLE_MOTOR_VOLTAGE.in(Units.Volts)),
+            ROBOT_TIME_STEP.in(Units.Seconds));
 
     loop =
-            new LinearSystemLoop<>(
-                    sys,
-                    controller,
-                    filter,
-                    MAX_ANGLE_MOTOR_VOLTAGE.in(Units.Volts),
-                    ROBOT_TIME_STEP.in(Units.Seconds));
+        new LinearSystemLoop<>(
+            sys,
+            controller,
+            filter,
+            MAX_ANGLE_MOTOR_VOLTAGE.in(Units.Volts),
+            ROBOT_TIME_STEP.in(Units.Seconds));
   }
 
   public boolean isLoading() {
@@ -101,8 +102,8 @@ public class Indexer extends SubsystemBase {
 
   public boolean isInactive() {
     return this.getState() == State.EMPTY
-            && !(this.getState() == State.LOADING)
-            && !(this.getState() == State.LOADED);
+        && !(this.getState() == State.LOADING)
+        && !(this.getState() == State.LOADED);
   }
 
   public Command startLoading() {
@@ -126,7 +127,7 @@ public class Indexer extends SubsystemBase {
       case LOADING -> {
         indexMotor.set(1); // TODO: Tune
         if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
-                < NOTE_LOADED_THRESHOLD.in(Units.Inches)) {
+            < NOTE_LOADED_THRESHOLD.in(Units.Inches)) {
           state = State.LOADED;
         }
       }
@@ -134,23 +135,24 @@ public class Indexer extends SubsystemBase {
         indexMotor.set(0);
         loop.setNextR(table.get(translationToSpeaker).angle());
         if (loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
-                && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
+            && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
           state = State.READY;
         }
       }
       case FIRING -> {
         indexMotor.set(1); // TODO: Tune
         if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
-                < SHOT_FIRED_THRESHOLD.in(Units.Inches)) {
+            < SHOT_FIRED_THRESHOLD.in(Units.Inches)) {
           state = State.EMPTY;
         }
       }
     }
     loop.correct(
-            VecBuilder.fill(leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
+        VecBuilder.fill(
+            leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
     loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
     leadAngleMotor.set(
-            loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
+        loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
   }
 
   private enum State {

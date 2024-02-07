@@ -6,8 +6,6 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkRelativeEncoder;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
@@ -38,11 +36,12 @@ public class Shooter extends SubsystemBase {
   private static final double LOOPTIME = 0.02;
 
   private final TalonFX driveL =
-          new TalonFX(LEFT_DRIVE_ID, "rio"); //TODO: Make sure the canbus is right.
-  private final TalonFX driveR =
-          new TalonFX(RIGHT_DRIVE_ID, "rio");
-  private final CANSparkMax leadTrigger = new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
-  private final CANSparkMax followTrigger = new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
+      new TalonFX(LEFT_DRIVE_ID, "rio"); // TODO: Make sure the canbus is right.
+  private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "rio");
+  private final CANSparkMax leadTrigger =
+      new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
+  private final CANSparkMax followTrigger =
+      new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
@@ -61,63 +60,67 @@ public class Shooter extends SubsystemBase {
     this.table = table;
 
     sysL =
-            new SimpleVelocitySystem(
-                    kS,
-                    kV,
-                    kA,
-                    MAX_ERROR,
-                    MAX_CONTROL_EFFORT,
-                    MODEL_DEVIATION,
-                    ENCODER_DEVIATION,
-                    LOOPTIME);
+        new SimpleVelocitySystem(
+            kS,
+            kV,
+            kA,
+            MAX_ERROR,
+            MAX_CONTROL_EFFORT,
+            MODEL_DEVIATION,
+            ENCODER_DEVIATION,
+            LOOPTIME);
     sysR =
-            new SimpleVelocitySystem(
-                    kS,
-                    kV,
-                    kA,
-                    MAX_ERROR,
-                    MAX_CONTROL_EFFORT,
-                    MODEL_DEVIATION,
-                    ENCODER_DEVIATION,
-                    LOOPTIME);
+        new SimpleVelocitySystem(
+            kS,
+            kV,
+            kA,
+            MAX_ERROR,
+            MAX_CONTROL_EFFORT,
+            MODEL_DEVIATION,
+            ENCODER_DEVIATION,
+            LOOPTIME);
     routineL =
-            new SysIdRoutine(
-                    new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
-                    new SysIdRoutine.Mechanism(
-                            (Measure<Voltage> volts) -> driveL.setVoltage(volts.in(Volts)),
-                            this::logL,
-                            this,
-                            "left-flywheel-motor"));
+        new SysIdRoutine(
+            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+            new SysIdRoutine.Mechanism(
+                (Measure<Voltage> volts) -> driveL.setVoltage(volts.in(Volts)),
+                this::logL,
+                this,
+                "left-flywheel-motor"));
     routineR =
-            new SysIdRoutine(
-                    new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
-                    new SysIdRoutine.Mechanism(
-                            (Measure<Voltage> volts) -> driveR.setVoltage(volts.in(Volts)),
-                            this::logR,
-                            this,
-                            "right flywheel motor"));
+        new SysIdRoutine(
+            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+            new SysIdRoutine.Mechanism(
+                (Measure<Voltage> volts) -> driveR.setVoltage(volts.in(Volts)),
+                this::logR,
+                this,
+                "right flywheel motor"));
   }
 
   private void logR(SysIdRoutineLog log) {
     log.motor("right-flywheel-motor")
-            .voltage(appliedVoltage.mut_replace(driveL.getSupplyVoltage().getValue() * driveL.get(), Volts))
-            .angularVelocity(velocity.mut_replace(driveL.getVelocity().getValue(), Rotations.per(Second)));
+        .voltage(
+            appliedVoltage.mut_replace(driveL.getSupplyVoltage().getValue() * driveL.get(), Volts))
+        .angularVelocity(
+            velocity.mut_replace(driveL.getVelocity().getValue(), Rotations.per(Second)));
   }
 
   private void logL(SysIdRoutineLog log) {
     log.motor("left-flywheel-motor")
-            .voltage(appliedVoltage.mut_replace(driveR.getSupplyVoltage().getValue() * driveR.get(), Volts))
-            .angularVelocity(velocity.mut_replace(driveR.getVelocity().getValue(), Rotations.per(Second)));
+        .voltage(
+            appliedVoltage.mut_replace(driveR.getSupplyVoltage().getValue() * driveR.get(), Volts))
+        .angularVelocity(
+            velocity.mut_replace(driveR.getVelocity().getValue(), Rotations.per(Second)));
   }
 
   @Log.NT
   private double getWheelSpeedL() {
-    return driveL.getVelocity().getValue()*60; //Returns velocity in RPM.
+    return driveL.getVelocity().getValue() * 60; // Returns velocity in RPM.
   }
 
   @Log.NT
   private double getWheelSpeedR() {
-    return driveR.getVelocity().getValue()*60; //Returns velocity in RPM.
+    return driveR.getVelocity().getValue() * 60; // Returns velocity in RPM.
   }
 
   private boolean atSetpoint() {
@@ -126,11 +129,11 @@ public class Shooter extends SubsystemBase {
 
   public Command requestShot(Translation2d translationToSpeaker) {
     return new InstantCommand(
-            () -> {
-              state = State.APPROACHING;
-              this.translationToSpeaker = translationToSpeaker;
-            },
-            this);
+        () -> {
+          state = State.APPROACHING;
+          this.translationToSpeaker = translationToSpeaker;
+        },
+        this);
   }
 
   public Command idle() {

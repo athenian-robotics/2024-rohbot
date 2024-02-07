@@ -80,7 +80,7 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command resetHeading() {
-      return new InstantCommand(() -> swerveDrive.zeroGyro(),this);
+    return new InstantCommand(() -> swerveDrive.zeroGyro(), this);
   }
   // TODO: Implement a command to face speaker when shooting
 }
