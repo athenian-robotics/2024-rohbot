@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.io.File;
 import java.util.function.DoubleSupplier;
@@ -76,6 +77,10 @@ public class Swerve extends SubsystemBase {
               true,
               false);
         });
+  }
+
+  public Command resetHeading() {
+      return new InstantCommand(() -> swerveDrive.zeroGyro(),this);
   }
   // TODO: Implement a command to face speaker when shooting
 }
