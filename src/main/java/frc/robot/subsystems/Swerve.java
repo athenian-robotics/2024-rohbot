@@ -12,11 +12,17 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.io.File;
 import java.util.function.DoubleSupplier;
+
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import swervelib.SwerveDrive;
+import swervelib.SwerveDriveTest;
 import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
+
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
 
 public class Swerve extends SubsystemBase {
   private final double maximumSpeed = Units.feetToMeters(20);
@@ -78,6 +84,22 @@ public class Swerve extends SubsystemBase {
               false);
         });
   }
+
+  public Command sysIdDriveCommand() {
+      return SwerveDriveTest.generateSysIdCommand(
+              SwerveDriveTest.setDriveSysIdRoutine(
+                      new SysIdRoutine.Config(),
+                      this, swerveDrive, 12),
+              3.0, 5.0, 3.0);
+  }
+
+    public Command sysIdAngleMotorCommand() {
+        return SwerveDriveTest.generateSysIdCommand(
+                SwerveDriveTest.setAngleSysIdRoutine(
+                        new SysIdRoutine.Config(),
+                        this, swerveDrive),
+                3.0, 5.0, 3.0);
+    }
 
   public Command resetHeading() {
     return new InstantCommand(() -> swerveDrive.zeroGyro(), this);
