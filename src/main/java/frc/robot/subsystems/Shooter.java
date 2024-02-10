@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
+import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.SimpleVelocitySystem;
 import lombok.Getter;
 import monologue.Annotations.Log;
@@ -35,6 +36,7 @@ public class Shooter extends SubsystemBase {
   private static final double ENCODER_DEVIATION = 0;
   private static final double LOOPTIME = 0.02;
 
+  private final PoseEstimator poseEstimator;
   private final TalonFX driveL =
       new TalonFX(LEFT_DRIVE_ID, "rio"); // TODO: Make sure the canbus is right.
   private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "rio");
@@ -51,9 +53,7 @@ public class Shooter extends SubsystemBase {
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
 
-  private Translation2d translationToSpeaker;
-
-  public Shooter(ShooterDataTable table) {
+  public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
 
     followTrigger.follow(leadTrigger);
 
@@ -95,6 +95,7 @@ public class Shooter extends SubsystemBase {
                 this::logR,
                 this,
                 "right flywheel motor"));
+    this.poseEstimator = poseEstimator;
   }
 
   private void logR(SysIdRoutineLog log) {
@@ -127,11 +128,10 @@ public class Shooter extends SubsystemBase {
     return Math.abs(sysL.getError()) < MAX_ERROR && Math.abs(sysR.getError()) < MAX_ERROR;
   }
 
-  public Command requestShot(Translation2d translationToSpeaker) {
+  public Command requestShot() {
     return new InstantCommand(
         () -> {
           state = State.APPROACHING;
-          this.translationToSpeaker = translationToSpeaker;
         },
         this);
   }
@@ -186,7 +186,7 @@ public class Shooter extends SubsystemBase {
         break;
       case APPROACHING:
         // send limelight data to data table, send result to system
-        ShooterSpec spec = table.get(translationToSpeaker);
+        ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
         sysL.set(spec.speedL());
         sysR.set(spec.speedR());
         break;

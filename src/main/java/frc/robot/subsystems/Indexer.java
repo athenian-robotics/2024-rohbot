@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.ShooterDataTable;
+import frc.robot.inputs.PoseEstimator;
 import lombok.Getter;
 
 public class Indexer extends SubsystemBase {
@@ -36,18 +37,18 @@ public class Indexer extends SubsystemBase {
   private static final Measure<Distance> NOTE_LOADED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Seconds).of(50);
+  private final PoseEstimator poseEstimator;
   private final CANSparkMax indexMotor;
   private final CANSparkMax leadAngleMotor;
   private final CANSparkMax followAngleMotor;
   private final Rev2mDistanceSensor sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
-  private Translation2d translationToSpeaker;
   @Getter private State state;
 
   // private final Rev2mDistanceSensor sensor;
 
-  public Indexer(ShooterDataTable table) {
+  public Indexer(ShooterDataTable table, final PoseEstimator poseEstimator) {
     indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followAngleMotor =
@@ -86,6 +87,8 @@ public class Indexer extends SubsystemBase {
             filter,
             MAX_ANGLE_MOTOR_VOLTAGE.in(Units.Volts),
             ROBOT_TIME_STEP.in(Units.Seconds));
+
+    this.poseEstimator = poseEstimator;
   }
 
   public boolean isLoading() {
@@ -133,7 +136,7 @@ public class Indexer extends SubsystemBase {
       }
       case LOADED -> {
         indexMotor.set(0);
-        loop.setNextR(table.get(translationToSpeaker).angle());
+        loop.setNextR(table.get(poseEstimator.translationToSpeaker()).angle().in(Units.Radians));
         if (loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
             && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
           state = State.READY;
