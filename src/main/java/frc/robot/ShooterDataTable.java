@@ -1,7 +1,11 @@
 package frc.robot;
 
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
 import frc.robot.lib.BarycentricInterpolation;
+
+import static edu.wpi.first.units.Units.Degrees;
 
 public class ShooterDataTable {
   private BarycentricInterpolation interpolatorAngle;
@@ -19,10 +23,10 @@ public class ShooterDataTable {
     for (int i = 0; i < points.length; i++) {
       x[i] = points[i].getX();
       y[i] = points[i].getY();
-      angle[i] = specs[i].angle();
+      angle[i] = specs[i].angle().in(Degrees);
       speedL[i] = specs[i].speedL();
       speedR[i] = specs[i].speedR();
-      offset[i] = specs[i].offset();
+      offset[i] = specs[i].offset().in(Degrees);
     }
     try {
       interpolatorAngle = new BarycentricInterpolation(x, y, angle);
@@ -45,10 +49,10 @@ public class ShooterDataTable {
         };
     ShooterSpec[] specs =
         new ShooterSpec[] {
-          new ShooterSpec(0, 0, 0, 0),
-          new ShooterSpec(1, 1, 1, 1),
-          new ShooterSpec(2, 2, 2, 2),
-          new ShooterSpec(2, 2, 2, 2)
+          new ShooterSpec(Degrees.of(0), 0, 0, Degrees.of(0)),
+          new ShooterSpec(Degrees.of(1), 1, 1, Degrees.of(1)),
+          new ShooterSpec(Degrees.of(2), 2, 2, Degrees.of(2)),
+          new ShooterSpec(Degrees.of(2), 2, 2, Degrees.of(2))
         };
     ShooterDataTable table = new ShooterDataTable(points, specs);
     System.out.println(table.get(new Translation2d(0.5, 0.5)));
@@ -56,9 +60,9 @@ public class ShooterDataTable {
 
   public ShooterSpec get(Translation2d toTarget) {
     return new ShooterSpec(
-        interpolatorAngle.interpolate(toTarget.getX(), toTarget.getY()),
+        Degrees.of(interpolatorAngle.interpolate(toTarget.getX(), toTarget.getY())),
         interpolatorSpeedL.interpolate(toTarget.getX(), toTarget.getY()),
         interpolatorSpeedR.interpolate(toTarget.getX(), toTarget.getY()),
-        interpolatorOffset.interpolate(toTarget.getX(), toTarget.getY()));
+        Degrees.of(interpolatorOffset.interpolate(toTarget.getX(), toTarget.getY())));
   }
 }
