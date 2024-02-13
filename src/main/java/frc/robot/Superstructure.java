@@ -36,9 +36,12 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command fireShot() {
-    return shooter.requestShot().andThen(shooter.waitUntilReady()
-            .alongWith(indexer.waitUntilReady())
-            .andThen(indexer.fire().alongWith(shooter.fire())))
-        ;
+    return shooter
+        .requestShot()
+        .andThen(
+            shooter
+                .waitUntilReady()
+                .alongWith(indexer.waitUntilReady())
+                .andThen(indexer.fire().alongWith(shooter.fire())));
   }
 }

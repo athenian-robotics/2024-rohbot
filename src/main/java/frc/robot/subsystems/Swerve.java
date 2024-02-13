@@ -14,11 +14,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import java.io.File;
-import java.util.function.DoubleSupplier;
-
 import frc.robot.ShooterDataTable;
 import frc.robot.inputs.PoseEstimator;
+import java.io.File;
+import java.util.function.DoubleSupplier;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
 import swervelib.math.SwerveMath;
@@ -27,31 +26,33 @@ import swervelib.telemetry.SwerveDriveTelemetry;
 import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 public class Swerve extends SubsystemBase {
-    private final Measure<Velocity<Distance>> maximumSpeed = Units.FeetPerSecond.of(20);
-    private final Measure<Velocity<Velocity<Distance>>> MAXIMUM_ACCELERATION = Units.MetersPerSecondPerSecond.of(4); //TODO: Fill
-    private final Measure<Velocity<Velocity<Angle>>> MAXIMUM_ANGULAR_ACCELERATION = Units.DegreesPerSecond.per(Units.Seconds).of(720); //TODO: Fill
-    private SwerveDrive swerveDrive;
-    private PoseEstimator poseEstimator;
-    private final ShooterDataTable table;
+  private final Measure<Velocity<Distance>> maximumSpeed = Units.FeetPerSecond.of(20);
+  private final Measure<Velocity<Velocity<Distance>>> MAXIMUM_ACCELERATION =
+      Units.MetersPerSecondPerSecond.of(4); // TODO: Fill
+  private final Measure<Velocity<Velocity<Angle>>> MAXIMUM_ANGULAR_ACCELERATION =
+      Units.DegreesPerSecond.per(Units.Seconds).of(720); // TODO: Fill
+  private SwerveDrive swerveDrive;
+  private final ShooterDataTable table;
 
-    public Swerve(File swerveJsonDirectory, PoseEstimator poseEstimator, ShooterDataTable shooterDataTable) {
+  public Swerve(File swerveJsonDirectory, ShooterDataTable shooterDataTable) {
     // Angle conversion factor = 360 / (GEAR RATIO * ENCODER RESOLUTION)
     double angleConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(12.8, 4096);
     // with real values
     // Motor conversion factor is (PI * WHEEL DIAMETER IN METERS) / (GEAR RATIO *
     // ENCODER RESOLUTION).
-    double driveConversionFactor =
-        SwerveMath.calculateMetersPerRotation(0, 6.75, 1);
+    double driveConversionFactor = SwerveMath.calculateMetersPerRotation(0, 6.75, 1);
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
     try {
       swerveDrive =
           new SwerveParser(swerveJsonDirectory)
-              .createSwerveDrive(maximumSpeed.in(Units.MetersPerSecond), angleConversionFactor, driveConversionFactor);
+              .createSwerveDrive(
+                  maximumSpeed.in(Units.MetersPerSecond),
+                  angleConversionFactor,
+                  driveConversionFactor);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
 
-    this.poseEstimator = poseEstimator;
     this.table = shooterDataTable;
 
     AutoBuilder.configureHolonomic(
@@ -76,9 +77,9 @@ public class Swerve extends SubsystemBase {
           return false;
         },
         this);
-    }
+  }
 
-    public Command driveCommand(
+  public Command driveCommand(
       DoubleSupplier translationX, DoubleSupplier translationY, DoubleSupplier angSped) {
     swerveDrive.setHeadingCorrection(false);
     return run(
@@ -91,35 +92,40 @@ public class Swerve extends SubsystemBase {
               true,
               false);
         });
-    }
+  }
 
-    public Command sysIdDriveCommand() {
+  public Command sysIdDriveCommand() {
     return SwerveDriveTest.generateSysIdCommand(
         SwerveDriveTest.setDriveSysIdRoutine(new SysIdRoutine.Config(), this, swerveDrive, 12),
         3.0,
         5.0,
         3.0);
-    }
+  }
 
-    public Command sysIdAngleMotorCommand() {
+  public Command sysIdAngleMotorCommand() {
     return SwerveDriveTest.generateSysIdCommand(
         SwerveDriveTest.setAngleSysIdRoutine(new SysIdRoutine.Config(), this, swerveDrive),
         3.0,
         5.0,
         3.0);
-    }
+  }
 
-    public Command resetHeading() {
+  public Command resetHeading() {
     return new InstantCommand(() -> swerveDrive.zeroGyro(), this);
-    }
+  }
 
-    public Command faceSpeaker() {
-        return AutoBuilder.pathfindToPose(
-                new Pose2d(
-                        poseEstimator.getPosition(),
-                        poseEstimator.translationToSpeaker().getAngle().plus(new Rotation2d(table.get(poseEstimator.translationToSpeaker()).offset()))),
-                new PathConstraints(swerveDrive.getMaximumVelocity(), MAXIMUM_ACCELERATION.in(Units.MetersPerSecondPerSecond),
-                        swerveDrive.getMaximumAngularVelocity(), MAXIMUM_ANGULAR_ACCELERATION.in(Units.RadiansPerSecond.per(Units.Seconds)))
-        );
-    }
+  public Command faceSpeaker(PoseEstimator poseEstimator) {
+    return AutoBuilder.pathfindToPose(
+        new Pose2d(
+            poseEstimator.getPosition(),
+            poseEstimator
+                .translationToSpeaker()
+                .getAngle()
+                .plus(new Rotation2d(table.get(poseEstimator.translationToSpeaker()).offset()))),
+        new PathConstraints(
+            swerveDrive.getMaximumVelocity(),
+            MAXIMUM_ACCELERATION.in(Units.MetersPerSecondPerSecond),
+            swerveDrive.getMaximumAngularVelocity(),
+            MAXIMUM_ANGULAR_ACCELERATION.in(Units.RadiansPerSecond.per(Units.Seconds))));
+  }
 }

@@ -6,7 +6,6 @@ import static edu.wpi.first.units.Units.*;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -34,7 +33,7 @@ public class Shooter extends SubsystemBase {
   private static final double MAX_CONTROL_EFFORT = 0.0;
   private static final double MODEL_DEVIATION = 0;
   private static final double ENCODER_DEVIATION = 0;
-  private static final double LOOPTIME = 0.02;
+  private static final Measure<Time> LOOP_TIME = Second.of(0.02);
 
   private final PoseEstimator poseEstimator;
   private final TalonFX driveL =
@@ -68,7 +67,7 @@ public class Shooter extends SubsystemBase {
             MAX_CONTROL_EFFORT,
             MODEL_DEVIATION,
             ENCODER_DEVIATION,
-            LOOPTIME);
+            LOOP_TIME.in(Seconds));
     sysR =
         new SimpleVelocitySystem(
             kS,
@@ -78,7 +77,7 @@ public class Shooter extends SubsystemBase {
             MAX_CONTROL_EFFORT,
             MODEL_DEVIATION,
             ENCODER_DEVIATION,
-            LOOPTIME);
+            LOOP_TIME.in(Seconds));
     routineL =
         new SysIdRoutine(
             new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
@@ -187,8 +186,8 @@ public class Shooter extends SubsystemBase {
       case APPROACHING:
         // send limelight data to data table, send result to system
         ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
-        sysL.set(spec.speedL());
-        sysR.set(spec.speedR());
+        sysL.set(spec.speedL().in(RPM));
+        sysR.set(spec.speedR().in(RPM));
         break;
       case FIRING:
         leadTrigger.set(0.5); // TODO: Tune

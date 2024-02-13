@@ -1,6 +1,7 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -9,7 +10,10 @@ import frc.robot.subsystems.Swerve;
 import java.io.File;
 
 public class RobotContainer {
-  private final Swerve drivebase = new Swerve(new File(Filesystem.getDeployDirectory(), "swerve"));
+  private final Swerve drivebase =
+      new Swerve(
+          new File(Filesystem.getDeployDirectory(), "swerve"),
+          new ShooterDataTable(new Translation2d[] {}, new ShooterSpec[] {}));
 
   private final double LEFT_X_DEADBAND = 0.001;
   private final double LEFT_Y_DEADBAND = 0.001;

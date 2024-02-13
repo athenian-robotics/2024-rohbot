@@ -1,11 +1,10 @@
 package frc.robot;
 
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Units;
-import frc.robot.lib.BarycentricInterpolation;
-
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.RPM;
+
+import edu.wpi.first.math.geometry.Translation2d;
+import frc.robot.lib.BarycentricInterpolation;
 
 public class ShooterDataTable {
   private BarycentricInterpolation interpolatorAngle;
@@ -24,8 +23,8 @@ public class ShooterDataTable {
       x[i] = points[i].getX();
       y[i] = points[i].getY();
       angle[i] = specs[i].angle().in(Degrees);
-      speedL[i] = specs[i].speedL();
-      speedR[i] = specs[i].speedR();
+      speedL[i] = specs[i].speedL().in(RPM);
+      speedR[i] = specs[i].speedR().in(RPM);
       offset[i] = specs[i].offset().in(Degrees);
     }
     try {
@@ -49,10 +48,10 @@ public class ShooterDataTable {
         };
     ShooterSpec[] specs =
         new ShooterSpec[] {
-          new ShooterSpec(Degrees.of(0), 0, 0, Degrees.of(0)),
-          new ShooterSpec(Degrees.of(1), 1, 1, Degrees.of(1)),
-          new ShooterSpec(Degrees.of(2), 2, 2, Degrees.of(2)),
-          new ShooterSpec(Degrees.of(2), 2, 2, Degrees.of(2))
+          new ShooterSpec(Degrees.of(0), RPM.of(0), RPM.of(0), Degrees.of(0)),
+          new ShooterSpec(Degrees.of(1), RPM.of(1), RPM.of(1), Degrees.of(1)),
+          new ShooterSpec(Degrees.of(2), RPM.of(2), RPM.of(1), Degrees.of(2)),
+          new ShooterSpec(Degrees.of(2), RPM.of(2), RPM.of(2), Degrees.of(2))
         };
     ShooterDataTable table = new ShooterDataTable(points, specs);
     System.out.println(table.get(new Translation2d(0.5, 0.5)));
@@ -61,8 +60,8 @@ public class ShooterDataTable {
   public ShooterSpec get(Translation2d toTarget) {
     return new ShooterSpec(
         Degrees.of(interpolatorAngle.interpolate(toTarget.getX(), toTarget.getY())),
-        interpolatorSpeedL.interpolate(toTarget.getX(), toTarget.getY()),
-        interpolatorSpeedR.interpolate(toTarget.getX(), toTarget.getY()),
+        RPM.of(interpolatorSpeedL.interpolate(toTarget.getX(), toTarget.getY())),
+        RPM.of(interpolatorSpeedR.interpolate(toTarget.getX(), toTarget.getY())),
         Degrees.of(interpolatorOffset.interpolate(toTarget.getX(), toTarget.getY())));
   }
 }
