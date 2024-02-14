@@ -21,53 +21,33 @@ public class Superstructure extends SubsystemBase {
   private final NoteDetector noteDetector;
   private final PoseEstimator poseEstimator;
 
-  private final PathPlannerPath leftTopToNoteToAmpTraj =
-      PathPlannerPath.fromChoreoTrajectory("leftTopToAmp");
-  private final PathPlannerPath topLeftToMiddle1 =
-      PathPlannerPath.fromChoreoTrajectory("topLeftToMiddle1");
+  private final PathPlannerPath leftTopToNoteToAmpTraj = PathPlannerPath.fromChoreoTrajectory("leftTopToAmp");
+  private final PathPlannerPath topLeftToMiddle1 = PathPlannerPath.fromChoreoTrajectory("topLeftToMiddle1");
 
-  private final PathPlannerPath middle1ToMiddle2 =
-      PathPlannerPath.fromChoreoTrajectory("middle1ToMiddle2");
-  private final PathPlannerPath middle1ToSpeaker =
-      PathPlannerPath.fromChoreoTrajectory("middle1ToSpeaker");
-  private final PathPlannerPath middle2ToMiddle3 =
-      PathPlannerPath.fromChoreoTrajectory("middle2ToMiddle3");
-  private final PathPlannerPath middle2ToSpeaker =
-      PathPlannerPath.fromChoreoTrajectory("middle2ToSpeaker");
-  private final PathPlannerPath middle3ToMiddle4 =
-      PathPlannerPath.fromChoreoTrajectory("middle3ToMiddle4");
-  private final PathPlannerPath middle3ToSpeaker =
-      PathPlannerPath.fromChoreoTrajectory("middle3ToSpeaker");
-  private final PathPlannerPath middle4ToMiddle5 =
-      PathPlannerPath.fromChoreoTrajectory("middle4ToMiddle5");
-  private final PathPlannerPath middle4ToSpeaker =
-      PathPlannerPath.fromChoreoTrajectory("middle4ToSpeaker");
-  private final PathPlannerPath middle5ToSpeaker =
-      PathPlannerPath.fromChoreoTrajectory("middle5ToMiddle6");
+  private final PathPlannerPath middle1ToMiddle2 = PathPlannerPath.fromChoreoTrajectory("middle1ToMiddle2");
+  private final PathPlannerPath middle1ToSpeaker = PathPlannerPath.fromChoreoTrajectory("middle1ToSpeaker");
+  private final PathPlannerPath middle2ToMiddle3 = PathPlannerPath.fromChoreoTrajectory("middle2ToMiddle3");
+  private final PathPlannerPath middle2ToSpeaker = PathPlannerPath.fromChoreoTrajectory("middle2ToSpeaker");
+  private final PathPlannerPath middle3ToMiddle4 = PathPlannerPath.fromChoreoTrajectory("middle3ToMiddle4");
+  private final PathPlannerPath middle3ToSpeaker = PathPlannerPath.fromChoreoTrajectory("middle3ToSpeaker");
+  private final PathPlannerPath middle4ToMiddle5 = PathPlannerPath.fromChoreoTrajectory("middle4ToMiddle5");
+  private final PathPlannerPath middle4ToSpeaker = PathPlannerPath.fromChoreoTrajectory("middle4ToSpeaker");
+  private final PathPlannerPath middle5ToSpeaker = PathPlannerPath.fromChoreoTrajectory("middle5ToMiddle6");
 
   private final PathPlannerPath ampToMiddle1 = PathPlannerPath.fromChoreoTrajectory("ampToMiddle1");
-  private final PathPlannerPath bottomLeftToMiddle5 =
-      PathPlannerPath.fromChoreoTrajectory("bottomLeftToMiddle5");
+  private final PathPlannerPath bottomLeftToMiddle5 = PathPlannerPath.fromChoreoTrajectory("bottomLeftToMiddle5");
 
-  private final PathPlannerPath middle5ToMiddle4 =
-      PathPlannerPath.fromChoreoTrajectory("middle5ToMiddle4");
-  private final PathPlannerPath middle4ToMiddle3 =
-      PathPlannerPath.fromChoreoTrajectory("middle4ToMiddle3");
-  private final PathPlannerPath middle3ToMiddle2 =
-      PathPlannerPath.fromChoreoTrajectory("middle3ToMiddle2");
-  private final PathPlannerPath middle2ToMiddle1 =
-      PathPlannerPath.fromChoreoTrajectory("middle2ToMiddle1");
-  private final PathPlannerPath speakerToMiddle2 =
-      PathPlannerPath.fromChoreoTrajectory("speakerToMiddle2");
-  private final PathPlannerPath speakerToMiddle3 =
-      PathPlannerPath.fromChoreoTrajectory("speakerToMiddle3");
-  private final PathPlannerPath speakerToMiddle4 =
-      PathPlannerPath.fromChoreoTrajectory("speakerToMiddle4");
-  private final PathPlannerPath speakerToMiddle5 =
-      PathPlannerPath.fromChoreoTrajectory("speakerToMiddle5");
+  private final PathPlannerPath middle5ToMiddle4 = PathPlannerPath.fromChoreoTrajectory("middle5ToMiddle4");
+  private final PathPlannerPath middle4ToMiddle3 = PathPlannerPath.fromChoreoTrajectory("middle4ToMiddle3");
+  private final PathPlannerPath middle3ToMiddle2 = PathPlannerPath.fromChoreoTrajectory("middle3ToMiddle2");
+  private final PathPlannerPath middle2ToMiddle1 = PathPlannerPath.fromChoreoTrajectory("middle2ToMiddle1");
+  private final PathPlannerPath speakerToMiddle2 = PathPlannerPath.fromChoreoTrajectory("speakerToMiddle2");
+  private final PathPlannerPath speakerToMiddle3 = PathPlannerPath.fromChoreoTrajectory("speakerToMiddle3");
+  private final PathPlannerPath speakerToMiddle4 = PathPlannerPath.fromChoreoTrajectory("speakerToMiddle4");
+  private final PathPlannerPath speakerToMiddle5 = PathPlannerPath.fromChoreoTrajectory("speakerToMiddle5");
 
-  private final PathPlannerPath fromStartingMiddleToMiddle3 =
-      PathPlannerPath.fromChoreoTrajectory("fromStartingMiddleToMiddle3");
+  private final PathPlannerPath fromStartingMiddleToMiddle3 = PathPlannerPath
+      .fromChoreoTrajectory("fromStartingMiddleToMiddle3");
 
   public Superstructure(
       Intake intake,
@@ -99,7 +79,13 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command fireShot() {
-    return shooter.waitUntilReady().andThen(indexer.waitUntilReady()).andThen(indexer.fire());
+    return shooter
+        .requestShot()
+        .andThen(
+            shooter
+                .waitUntilReady()
+                .alongWith(indexer.waitUntilReady())
+                .andThen(indexer.fire().alongWith(shooter.fire())));
   }
 
   public Command fromTopWithAmp() {
@@ -129,7 +115,7 @@ public class Superstructure extends SubsystemBase {
         checkAndHandleNote(fromMiddle3ToSpeaker(), fromMiddle3ToMiddle2(), fromSpeakerToMiddle2()),
         checkAndHandleNote(
             fromMiddle2ToSpeaker(), fromMiddle2ToMiddle3(), null) // NOTE: we could do more...
-        );
+    );
   }
 
   public Command fromMiddle1ToMiddle5() {
