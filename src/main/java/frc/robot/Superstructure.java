@@ -99,13 +99,11 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command fromTopWithoutAmp() {
-    return new SequentialCommandGroup(
-        intake.startIntake(), fromTopToMiddle1(), fromMiddle1ToMiddle5());
+    return intake.startIntake().andThen(fromTopToMiddle1()).andThen(fromMiddle1ToMiddle5());
   }
 
   public Command fromBottomWithoutAmp() {
-    return new SequentialCommandGroup(
-        intake.startIntake(), fromBottomToMiddle5(), fromMiddle5ToMiddle1());
+    return intake.startIntake().andThen(fromBottomToMiddle5()).andThen(fromMiddle5ToMiddle1());
   }
 
   public Command fromStartingMiddleWithoutAmp() {
@@ -138,19 +136,18 @@ public class Superstructure extends SubsystemBase {
 
   private Command checkAndHandleNote(
       Command toSpeaker, Command toNextNoteDirectly, Command fromSpeakerToNextNote) {
-    return new SequentialCommandGroup(
-        defer(
-            () -> {
-              if (intake.isNoteFound()) {
-                return new SequentialCommandGroup(
-                    // onTheFlyRobotToNote(),
-                    toSpeaker, fireShot(), intake.startIntake(), fromSpeakerToNextNote);
-              } else if (toNextNoteDirectly != null) {
-                return new SequentialCommandGroup(intake.startIntake(), toNextNoteDirectly);
-              } else {
-                return null; // No next action if at the last note and no note is present
-              }
-            }));
+    return defer(
+        () -> {
+          if (intake.isNoteFound()) {
+            return new SequentialCommandGroup(
+                // onTheFlyRobotToNote(),
+                toSpeaker, fireShot(), intake.startIntake(), fromSpeakerToNextNote);
+          } else if (toNextNoteDirectly != null) {
+            return new SequentialCommandGroup(intake.startIntake(), toNextNoteDirectly);
+          } else {
+            return null; // No next action if at the last note and no note is present
+          }
+        });
   }
 
   // private Command onTheFlyRobotToNote() {
