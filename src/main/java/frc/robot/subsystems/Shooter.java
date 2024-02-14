@@ -3,11 +3,9 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.*;
 
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.RelativeEncoder;
-import com.revrobotics.SparkRelativeEncoder;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -17,14 +15,17 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
+import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.SimpleVelocitySystem;
 import lombok.Getter;
 import monologue.Annotations.Log;
 
 public class Shooter extends SubsystemBase {
   // TODO: fill in values
-  private static final int LEFT_ID = 0;
-  private static final int RIGHT_ID = 0;
+  private static final int LEFT_DRIVE_ID = 0;
+  private static final int RIGHT_DRIVE_ID = 0;
+  private static final int LEAD_TRIGGER_ID = 0;
+  private static final int FOLLOW_TRIGGER_ID = 0;
   private static final double kS = 0;
   private static final double kV = 0;
   private static final double kA = 0;
@@ -32,14 +33,16 @@ public class Shooter extends SubsystemBase {
   private static final double MAX_CONTROL_EFFORT = 0.0;
   private static final double MODEL_DEVIATION = 0;
   private static final double ENCODER_DEVIATION = 0;
-  private static final double LOOPTIME = 0.02;
+  private static final Measure<Time> LOOP_TIME = Second.of(0.02);
 
-  private final CANSparkMax motorL =
-      new CANSparkMax(LEFT_ID, CANSparkLowLevel.MotorType.kBrushless);
-  private final CANSparkMax motorR =
-      new CANSparkMax(RIGHT_ID, CANSparkLowLevel.MotorType.kBrushless);
-  private final RelativeEncoder encoderL;
-  private final RelativeEncoder encoderR;
+  private final PoseEstimator poseEstimator;
+  private final TalonFX driveL =
+      new TalonFX(LEFT_DRIVE_ID, "rio"); // TODO: Make sure the canbus is right.
+  private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "rio");
+  private final CANSparkMax leadTrigger =
+      new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
+  private final CANSparkMax followTrigger =
+      new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
@@ -49,11 +52,9 @@ public class Shooter extends SubsystemBase {
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
 
-  private Translation2d translationToSpeaker;
+  public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
 
-  public Shooter(ShooterDataTable table) {
-    encoderL = motorL.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
-    encoderR = motorR.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
+    followTrigger.follow(leadTrigger);
 
     this.table = table;
 
@@ -66,7 +67,7 @@ public class Shooter extends SubsystemBase {
             MAX_CONTROL_EFFORT,
             MODEL_DEVIATION,
             ENCODER_DEVIATION,
-            LOOPTIME);
+            LOOP_TIME.in(Seconds));
     sysR =
         new SimpleVelocitySystem(
             kS,
@@ -76,12 +77,12 @@ public class Shooter extends SubsystemBase {
             MAX_CONTROL_EFFORT,
             MODEL_DEVIATION,
             ENCODER_DEVIATION,
-            LOOPTIME);
+            LOOP_TIME.in(Seconds));
     routineL =
         new SysIdRoutine(
             new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
             new SysIdRoutine.Mechanism(
-                (Measure<Voltage> volts) -> motorL.setVoltage(volts.in(Volts)),
+                (Measure<Voltage> volts) -> driveL.setVoltage(volts.in(Volts)),
                 this::logL,
                 this,
                 "left-flywheel-motor"));
@@ -89,43 +90,47 @@ public class Shooter extends SubsystemBase {
         new SysIdRoutine(
             new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
             new SysIdRoutine.Mechanism(
-                (Measure<Voltage> volts) -> motorR.setVoltage(volts.in(Volts)),
+                (Measure<Voltage> volts) -> driveR.setVoltage(volts.in(Volts)),
                 this::logR,
                 this,
                 "right flywheel motor"));
+    this.poseEstimator = poseEstimator;
   }
 
   private void logR(SysIdRoutineLog log) {
     log.motor("right-flywheel-motor")
-        .voltage(appliedVoltage.mut_replace(motorL.getBusVoltage() * motorL.get(), Volts))
-        .angularVelocity(velocity.mut_replace(encoderL.getVelocity(), Rotations.per(Minute)));
+        .voltage(
+            appliedVoltage.mut_replace(driveL.getSupplyVoltage().getValue() * driveL.get(), Volts))
+        .angularVelocity(
+            velocity.mut_replace(driveL.getVelocity().getValue(), Rotations.per(Second)));
   }
 
   private void logL(SysIdRoutineLog log) {
     log.motor("left-flywheel-motor")
-        .voltage(appliedVoltage.mut_replace(motorR.getBusVoltage() * motorR.get(), Volts))
-        .angularVelocity(velocity.mut_replace(encoderR.getVelocity(), Rotations.per(Minute)));
+        .voltage(
+            appliedVoltage.mut_replace(driveR.getSupplyVoltage().getValue() * driveR.get(), Volts))
+        .angularVelocity(
+            velocity.mut_replace(driveR.getVelocity().getValue(), Rotations.per(Second)));
   }
 
   @Log.NT
   private double getWheelSpeedL() {
-    return encoderL.getVelocity();
+    return driveL.getVelocity().getValue() * 60; // Returns velocity in RPM.
   }
 
   @Log.NT
   private double getWheelSpeedR() {
-    return encoderR.getVelocity();
+    return driveR.getVelocity().getValue() * 60; // Returns velocity in RPM.
   }
 
   private boolean atSetpoint() {
     return Math.abs(sysL.getError()) < MAX_ERROR && Math.abs(sysR.getError()) < MAX_ERROR;
   }
 
-  public Command requestShot(Translation2d translationToSpeaker) {
+  public Command requestShot() {
     return new InstantCommand(
         () -> {
           state = State.APPROACHING;
-          this.translationToSpeaker = translationToSpeaker;
         },
         this);
   }
@@ -162,6 +167,10 @@ public class Shooter extends SubsystemBase {
     return routineR.dynamic(direction);
   }
 
+  public Command fire() {
+    return new InstantCommand(() -> state = State.FIRING, this);
+  }
+
   @Override
   public void periodic() {
     sysL.update(getWheelSpeedL()); // Returns RPM
@@ -176,9 +185,12 @@ public class Shooter extends SubsystemBase {
         break;
       case APPROACHING:
         // send limelight data to data table, send result to system
-        ShooterSpec spec = table.get(translationToSpeaker);
-        sysL.set(spec.speedL());
-        sysR.set(spec.speedR());
+        ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
+        sysL.set(spec.speedL().in(RPM));
+        sysR.set(spec.speedR().in(RPM));
+        break;
+      case FIRING:
+        leadTrigger.set(0.5); // TODO: Tune
         break;
       case SYSID:
         break;
@@ -194,5 +206,6 @@ public class Shooter extends SubsystemBase {
     APPROACHING, // approaching setpoint
     TESTING, // for collecting shooter data table values
     SYSID, // for system identification
+    FIRING,
   }
 }

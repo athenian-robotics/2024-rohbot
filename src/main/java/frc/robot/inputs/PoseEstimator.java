@@ -35,14 +35,17 @@ public class PoseEstimator implements Subsystem {
   public PoseEstimator(PhotonCamera photonCamera, SwerveDrive swerveDrive) throws IOException {
     this.swerveDrive = swerveDrive;
     gyro = new Pigeon2(13, "*");
-    aprilTagFieldLayout = AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
+    aprilTagFieldLayout =
+        AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
 
-    robotToCam = new Transform3d(
-        new Translation3d(
-            Units.inchesToMeters(14.5), Units.inchesToMeters(4.5), Units.inchesToMeters(18)),
-        new Rotation3d(0, 0, 0)); // TODO: Replace with real cam rotation
-    photonPoseEstimator = new PhotonPoseEstimator(
-        aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE, photonCamera, robotToCam);
+    robotToCam =
+        new Transform3d(
+            new Translation3d(
+                Units.inchesToMeters(14.5), Units.inchesToMeters(4.5), Units.inchesToMeters(18)),
+            new Rotation3d(0, 0, 0)); // TODO: Replace with real cam rotation
+    photonPoseEstimator =
+        new PhotonPoseEstimator(
+            aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE, photonCamera, robotToCam);
   }
 
   public Translation2d getPosition() {

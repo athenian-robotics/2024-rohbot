@@ -5,7 +5,6 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.photonvision.PhotonCamera;
@@ -24,13 +23,13 @@ public class NoteDetector {
     this.poseEstimator = poseEstimator;
   }
 
-  public Optional<List<Translation2d>> get() {
+  public Optional<Translation2d> getClosestNoteTranslation() {
     PhotonPipelineResult result = camera.getLatestResult();
 
     if (result.hasTargets()) {
-      ArrayList<Translation2d> positions = new ArrayList<>();
-
       List<PhotonTrackedTarget> targets = result.getTargets();
+      Translation2d closestTranslation = null;
+      double closestDistance = Double.MAX_VALUE;
 
       for (PhotonTrackedTarget target : targets) {
         Measure<Distance> distance =
@@ -45,11 +44,19 @@ public class NoteDetector {
             PhotonUtils.estimateCameraToTargetTranslation(
                 distance.in(Units.Meters), Rotation2d.fromDegrees(-target.getYaw()));
         Translation2d estimatedPose = poseEstimator.getPosition();
+
         if (estimatedPose != null) {
-          positions.add(estimatedPose.plus(translation));
+          double currentDistance = estimatedPose.getDistance(translation);
+          if (currentDistance < closestDistance) {
+            closestDistance = currentDistance;
+            closestTranslation = translation;
+          }
         }
       }
-      return Optional.of(positions);
+
+      if (closestTranslation != null) {
+        return Optional.of(closestTranslation);
+      }
     }
 
     return Optional.empty();
