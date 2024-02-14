@@ -38,7 +38,7 @@ public class RobotContainer {
   private final NoteDetector noteDetector;
   private final Superstructure superstructure;
 
-  private final SendableChooser<Command> autoChooser;
+  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public RobotContainer() {
     try {
@@ -60,15 +60,15 @@ public class RobotContainer {
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
     configureBindings();
 
-    autoChooser = AutoBuilder.buildAutoChooser();
+    autoChooser.addOption("Top with amp", superstructure.fromTopWithAmp());
+    autoChooser.addOption("Top with no amp", superstructure.fromTopWithoutAmp());
+    autoChooser.addOption("Bottom with no amp", superstructure.fromBottomWithoutAmp());
+    autoChooser.addOption("Middle with no amp", superstructure.fromStartingMiddleWithoutAmp());
   }
 
   private void configureBindings() {}
 
   public Command getAutonomousCommand() {
-    if (autoChooser.getSelected().equals("top with amp")) {
-      return null; // TODO: FINISH THIS
-    }
     return autoChooser.getSelected();
   }
 }
