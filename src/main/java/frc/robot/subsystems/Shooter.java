@@ -27,12 +27,12 @@ public class Shooter extends SubsystemBase {
   private static final int LEAD_TRIGGER_ID = 0;
   private static final int FOLLOW_TRIGGER_ID = 0;
   private static final double kS = 0;
-  private static final double kV = 0;
-  private static final double kA = 0;
-  private static final double MAX_ERROR = 0;
-  private static final double MAX_CONTROL_EFFORT = 0.0;
-  private static final double MODEL_DEVIATION = 0;
-  private static final double ENCODER_DEVIATION = 0;
+  private static final double kV = 0.54;
+  private static final double kA = 0.33;
+  private static final double MAX_ERROR = 5;
+  private static final double MAX_CONTROL_EFFORT = 8;
+  private static final double MODEL_DEVIATION = 1;
+  private static final double ENCODER_DEVIATION = 1 / 42; // 1 tick of built in neo encoder
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
 
   private final PoseEstimator poseEstimator;
@@ -47,7 +47,7 @@ public class Shooter extends SubsystemBase {
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
   private final MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
-  private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Minute).of(0));
+  private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Second).of(0));
   @Getter @Log.NT private State state = State.IDLE;
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
@@ -115,12 +115,12 @@ public class Shooter extends SubsystemBase {
 
   @Log.NT
   private double getWheelSpeedL() {
-    return driveL.getVelocity().getValue() * 60; // Returns velocity in RPM.
+    return driveL.getVelocity().getValue(); // Returns velocity in RPS.
   }
 
   @Log.NT
   private double getWheelSpeedR() {
-    return driveR.getVelocity().getValue() * 60; // Returns velocity in RPM.
+    return driveR.getVelocity().getValue(); // Returns velocity in RPS.
   }
 
   private boolean atSetpoint() {
@@ -173,7 +173,7 @@ public class Shooter extends SubsystemBase {
 
   @Override
   public void periodic() {
-    sysL.update(getWheelSpeedL()); // Returns RPM
+    sysL.update(getWheelSpeedL()); // Returns RPS
     sysR.update(getWheelSpeedR());
     switch (state) {
       case IDLE:
@@ -186,8 +186,8 @@ public class Shooter extends SubsystemBase {
       case APPROACHING:
         // send limelight data to data table, send result to system
         ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
-        sysL.set(spec.speedL().in(RPM));
-        sysR.set(spec.speedR().in(RPM));
+        sysL.set(spec.speedL().in(RotationsPerSecond));
+        sysR.set(spec.speedR().in(RotationsPerSecond));
         break;
       case FIRING:
         leadTrigger.set(0.5); // TODO: Tune
