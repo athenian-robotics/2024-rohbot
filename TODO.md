@@ -6,8 +6,7 @@ Project Description
 
 ### Todo
 
-- [ ] Fix swerve drive  
-
+- constants for swerve 
 ### In Progress
 
 
