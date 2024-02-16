@@ -107,4 +107,8 @@ public class Swerve extends SubsystemBase {
             swerveDrive.getMaximumAngularVelocity(),
             MAXIMUM_ANGULAR_ACCELERATION.in(Units.RadiansPerSecond.per(Units.Seconds))));
   }
+
+  public SwerveDrive getSwerveDrive() {
+    return swerveDrive;
+  }
 }
