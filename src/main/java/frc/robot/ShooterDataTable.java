@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.RPM;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.lib.BarycentricInterpolation;
+import io.github.jdiemke.triangulation.NotEnoughPointsException;
 
 public class ShooterDataTable {
   private BarycentricInterpolation interpolatorAngle;
@@ -12,7 +13,8 @@ public class ShooterDataTable {
   private BarycentricInterpolation interpolatorSpeedR;
   private BarycentricInterpolation interpolatorOffset;
 
-  public ShooterDataTable(Translation2d[] points, ShooterSpec[] specs) {
+  public ShooterDataTable(Translation2d[] points, ShooterSpec[] specs)
+      throws NotEnoughPointsException {
     double[] x = new double[points.length];
     double[] y = new double[points.length];
     double[] angle = new double[points.length];
@@ -33,12 +35,12 @@ public class ShooterDataTable {
       interpolatorSpeedR = new BarycentricInterpolation(x, y, speedR);
       interpolatorOffset = new BarycentricInterpolation(x, y, offset);
     } catch (Exception e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
   }
 
   // testing
-  public static void main(String... args) {
+  public static void main(String... args) throws NotEnoughPointsException {
     Translation2d[] points =
         new Translation2d[] {
           new Translation2d(0, 0),

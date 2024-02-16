@@ -16,49 +16,31 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.inputs.PoseEstimator;
-import java.io.File;
 import java.util.function.DoubleSupplier;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
-import swervelib.math.SwerveMath;
-import swervelib.parser.SwerveParser;
-import swervelib.telemetry.SwerveDriveTelemetry;
-import swervelib.telemetry.SwerveDriveTelemetry.TelemetryVerbosity;
 
 public class Swerve extends SubsystemBase {
-  private final Measure<Velocity<Distance>> maximumSpeed = Units.FeetPerSecond.of(20);
+
+  private final SwerveDrive swerveDrive;
+  private final ShooterDataTable table;
+  private final PoseEstimator poseEstimator;
   private final Measure<Velocity<Velocity<Distance>>> MAXIMUM_ACCELERATION =
       Units.MetersPerSecondPerSecond.of(4); // TODO: Fill
   private final Measure<Velocity<Velocity<Angle>>> MAXIMUM_ANGULAR_ACCELERATION =
       Units.DegreesPerSecond.per(Units.Seconds).of(720); // TODO: Fill
-  private SwerveDrive swerveDrive;
-  private final ShooterDataTable table;
 
-  public Swerve(File swerveJsonDirectory, ShooterDataTable shooterDataTable) {
-    // Angle conversion factor = 360 / (GEAR RATIO * ENCODER RESOLUTION)
-    double angleConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(12.8, 4096);
-    // with real values
-    // Motor conversion factor is (PI * WHEEL DIAMETER IN METERS) / (GEAR RATIO *
-    // ENCODER RESOLUTION).
-    double driveConversionFactor = SwerveMath.calculateMetersPerRotation(0, 6.75, 1);
-    SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
-    try {
-      swerveDrive =
-          new SwerveParser(swerveJsonDirectory)
-              .createSwerveDrive(
-                  maximumSpeed.in(Units.MetersPerSecond),
-                  angleConversionFactor,
-                  driveConversionFactor);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+  public Swerve(
+      SwerveDrive swerveDrive, ShooterDataTable shooterDataTable, PoseEstimator poseEstimator) {
+    this.swerveDrive = swerveDrive;
 
     this.table = shooterDataTable;
+    this.poseEstimator = poseEstimator;
 
     AutoBuilder.configureHolonomic(
-        () -> swerveDrive.swerveDrivePoseEstimator.getEstimatedPosition(),
-        pose -> swerveDrive.resetOdometry(pose),
-        () -> swerveDrive.getRobotVelocity(),
+        poseEstimator::getPose,
+        swerveDrive::resetOdometry,
+        swerveDrive::getRobotVelocity,
         swerveDrive::drive,
         new HolonomicPathFollowerConfig(
             new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
@@ -71,10 +53,7 @@ public class Swerve extends SubsystemBase {
             ),
         () -> {
           var alliance = DriverStation.getAlliance();
-          if (alliance.isPresent()) {
-            return alliance.get() == DriverStation.Alliance.Red;
-          }
-          return false;
+          return alliance.filter(value -> value == DriverStation.Alliance.Red).isPresent();
         },
         this);
   }
@@ -111,10 +90,10 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command resetHeading() {
-    return new InstantCommand(() -> swerveDrive.zeroGyro(), this);
+    return new InstantCommand(swerveDrive::zeroGyro, this);
   }
 
-  public Command faceSpeaker(PoseEstimator poseEstimator) {
+  public Command faceSpeaker() {
     return AutoBuilder.pathfindToPose(
         new Pose2d(
             poseEstimator.getPosition(),

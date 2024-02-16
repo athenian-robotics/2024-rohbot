@@ -38,6 +38,7 @@ public class Superstructure extends SubsystemBase {
   public Command fireShot() {
     return shooter
         .requestShot()
+        .alongWith(swerve.faceSpeaker())
         .andThen(
             shooter
                 .waitUntilReady()
