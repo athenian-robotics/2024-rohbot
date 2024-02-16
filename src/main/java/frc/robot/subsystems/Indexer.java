@@ -162,6 +162,7 @@ public class Indexer extends SubsystemBase {
     LOADING,
     LOADED,
     READY,
-    EMPTY
+    EMPTY,
+    TESTING
   }
 }

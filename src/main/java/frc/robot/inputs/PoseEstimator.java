@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+
+import monologue.Annotations;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -56,11 +58,13 @@ public class PoseEstimator implements Subsystem {
             aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE, photonCamera, robotToCam);
   }
 
+  @Annotations.Log.NT
   public Translation2d getPosition() {
     Pose2d swervePose2d = getEstimatedPosition.get();
     return new Translation2d(swervePose2d.getX(), swervePose2d.getY());
   }
 
+  @Annotations.Log.NT
   public Pose2d getPose() {
     Pose2d swervePose2d = getEstimatedPosition.get();
     return new Pose2d(swervePose2d.getX(), swervePose2d.getY(), gyro.getRotation2d());

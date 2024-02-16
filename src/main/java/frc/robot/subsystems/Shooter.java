@@ -1,26 +1,27 @@
-package frc.robot.subsystems;
+  package frc.robot.subsystems;
 
-import static edu.wpi.first.units.MutableMeasure.mutable;
-import static edu.wpi.first.units.Units.*;
+  import static edu.wpi.first.units.MutableMeasure.mutable;
+  import static edu.wpi.first.units.Units.*;
 
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.revrobotics.CANSparkLowLevel;
-import com.revrobotics.CANSparkMax;
-import edu.wpi.first.units.*;
-import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.ShooterDataTable;
-import frc.robot.ShooterSpec;
-import frc.robot.inputs.PoseEstimator;
-import frc.robot.lib.SimpleVelocitySystem;
-import lombok.Getter;
-import monologue.Annotations.Log;
+  import com.ctre.phoenix6.hardware.TalonFX;
+  import com.revrobotics.CANSparkLowLevel;
+  import com.revrobotics.CANSparkMax;
+  import edu.wpi.first.networktables.*;
+  import edu.wpi.first.units.*;
+  import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
+  import edu.wpi.first.wpilibj2.command.Command;
+  import edu.wpi.first.wpilibj2.command.InstantCommand;
+  import edu.wpi.first.wpilibj2.command.SubsystemBase;
+  import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
+  import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+  import frc.robot.ShooterDataTable;
+  import frc.robot.ShooterSpec;
+  import frc.robot.inputs.PoseEstimator;
+  import frc.robot.lib.SimpleVelocitySystem;
+  import lombok.Getter;
+  import monologue.Annotations.Log;
 
-public class Shooter extends SubsystemBase {
+  public class Shooter extends SubsystemBase {
   // TODO: fill in values
   private static final int LEFT_DRIVE_ID = 0;
   private static final int RIGHT_DRIVE_ID = 0;
@@ -52,8 +53,15 @@ public class Shooter extends SubsystemBase {
   @Getter @Log.NT private State state = State.IDLE;
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
+  private final NetworkTable networkTable;
+  private final DoubleSubscriber speedLSubscriber;
+  private final DoubleSubscriber speedRSubscriber;
 
   public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
+    networkTable = NetworkTableInstance.getDefault().getTable("Test");
+
+    speedLSubscriber = networkTable.getDoubleTopic("speedL (RPS)").subscribe(0.0);
+    speedRSubscriber = networkTable.getDoubleTopic("speedR (RPS)").subscribe(0.0);
 
     followTrigger.follow(leadTrigger);
 
@@ -144,8 +152,8 @@ public class Shooter extends SubsystemBase {
     return new WaitUntilCommand(() -> state == State.READY);
   }
 
-  public Command testing() {
-    return new InstantCommand(() -> state = State.TESTING);
+  public Command requestTestShot() {
+    return new InstantCommand(() -> state = State.APPROACHING_TEST);
   }
 
   public Command sysIdQuasistaticL(SysIdRoutine.Direction direction) {
@@ -181,8 +189,10 @@ public class Shooter extends SubsystemBase {
         sysL.set(0.0);
         sysR.set(0.0);
         break;
-      case TESTING:
+      case APPROACHING_TEST:
         // log values
+        sysL.set(speedLSubscriber.get());
+        sysR.set(speedRSubscriber.get());
         break;
       case READY:
         break;
@@ -207,8 +217,8 @@ public class Shooter extends SubsystemBase {
     IDLE, // default state
     READY, // at setpoint and within tolerance
     APPROACHING, // approaching setpoint
-    TESTING, // for collecting shooter data table values
+    APPROACHING_TEST, // for collecting shooter data table values
     SYSID, // for system identification
     FIRING,
   }
-}
+  }
