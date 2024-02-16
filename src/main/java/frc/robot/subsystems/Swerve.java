@@ -122,7 +122,7 @@ public class Swerve extends SubsystemBase {
             poseEstimator
                 .translationToSpeaker()
                 .getAngle()
-                .plus(new Rotation2d(table.get(poseEstimator.translationToSpeaker()).offset()))),
+                .plus(new Rotation2d(offsetSubscriber.get()))),
         new PathConstraints(
             swerveDrive.getMaximumVelocity(),
             MAXIMUM_ACCELERATION.in(Units.MetersPerSecondPerSecond),
