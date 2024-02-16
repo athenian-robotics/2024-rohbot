@@ -39,7 +39,7 @@ public class Swerve extends SubsystemBase {
       SwerveDrive swerveDrive, ShooterDataTable shooterDataTable, PoseEstimator poseEstimator) {
     this.swerveDrive = swerveDrive;
     networkTable = NetworkTableInstance.getDefault().getTable("Test");
-    offsetSubscriber = networkTable.getDoubleTopic("speedL (RPS)").subscribe(0.0);
+    offsetSubscriber = networkTable.getDoubleTopic("offset (degrees)").subscribe(0.0);
 
     this.table = shooterDataTable;
     this.poseEstimator = poseEstimator;
@@ -122,7 +122,7 @@ public class Swerve extends SubsystemBase {
             poseEstimator
                 .translationToSpeaker()
                 .getAngle()
-                .plus(new Rotation2d(offsetSubscriber.get()))),
+                .plus(new Rotation2d(Units.Degrees.of(offsetSubscriber.get())))),
         new PathConstraints(
             swerveDrive.getMaximumVelocity(),
             MAXIMUM_ACCELERATION.in(Units.MetersPerSecondPerSecond),

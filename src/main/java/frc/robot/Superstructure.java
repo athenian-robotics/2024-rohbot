@@ -89,6 +89,17 @@ public class Superstructure extends SubsystemBase {
                 .andThen(indexer.fire().alongWith(shooter.fire())));
   }
 
+  public Command testShot() {
+    return shooter
+            .requestTestShot()
+            .alongWith(swerve.testFaceSpeaker())
+            .andThen(
+                    shooter
+                            .waitUntilReady()
+                            .alongWith(indexer.waitUntilReady())
+                            .andThen(indexer.fire()).alongWith(shooter.fire()));
+  }
+
   public Command fromTopWithAmp() {
     return new SequentialCommandGroup(
         intake.startIntake(),
