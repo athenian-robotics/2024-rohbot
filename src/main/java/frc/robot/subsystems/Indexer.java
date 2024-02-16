@@ -10,6 +10,9 @@ import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -43,6 +46,7 @@ public class Indexer extends SubsystemBase {
   private final Rev2mDistanceSensor sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
+  private final DoubleSubscriber angleSubscriber;
   @Getter private State state;
 
   // private final Rev2mDistanceSensor sensor;
@@ -56,6 +60,9 @@ public class Indexer extends SubsystemBase {
     this.table = table;
     sensor =
         new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
+
+    NetworkTable networkTable = NetworkTableInstance.getDefault().getTable("Test");
+    angleSubscriber = networkTable.getDoubleTopic("angle (degrees)").subscribe(0.0);
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
@@ -138,6 +145,14 @@ public class Indexer extends SubsystemBase {
         loop.setNextR(table.get(poseEstimator.translationToSpeaker()).angle().in(Units.Radians));
         if (loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
             && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
+          state = State.READY;
+        }
+      }
+      case TESTING -> {
+        indexMotor.set(0);
+        loop.setNextR(angleSubscriber.get());
+        if (loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
+                && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
           state = State.READY;
         }
       }

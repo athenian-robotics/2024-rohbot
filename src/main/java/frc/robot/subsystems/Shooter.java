@@ -53,12 +53,11 @@
   @Getter @Log.NT private State state = State.IDLE;
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
-  private final NetworkTable networkTable;
   private final DoubleSubscriber speedLSubscriber;
   private final DoubleSubscriber speedRSubscriber;
 
   public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
-    networkTable = NetworkTableInstance.getDefault().getTable("Test");
+    NetworkTable networkTable = NetworkTableInstance.getDefault().getTable("Test");
 
     speedLSubscriber = networkTable.getDoubleTopic("speedL (RPS)").subscribe(0.0);
     speedRSubscriber = networkTable.getDoubleTopic("speedR (RPS)").subscribe(0.0);
