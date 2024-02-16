@@ -2,12 +2,19 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.units.*;
+import edu.wpi.first.units.Distance;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.controllers.Thrustmaster;
+import frc.robot.subsystems.Indexer;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import io.github.jdiemke.triangulation.NotEnoughPointsException;
 import java.io.File;
@@ -23,13 +30,18 @@ public class RobotContainer {
 
   private final Swerve drivebase;
   private final PoseEstimator poseEstimator;
+  private final Intake intake;
+  private final Shooter shooter;
+  private final Indexer indexer;
+  private final NoteDetector noteDetector;
+  private final ShooterDataTable shooterDataTable; // TODO: Ensure to get the actual points
 
-  private final double LEFT_X_DEADBAND = 0.001;
-  private final double LEFT_Y_DEADBAND = 0.001;
   private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
-  private final SendableChooser<Command> autoChooser;
   private final SwerveDrive swerveDrive;
+  private final Superstructure superstructure;
+  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
+  private final PhotonCamera photonCamera = new PhotonCamera("photonvision"); // TODO: Remember to replace with the actual camera name
 
   static {
     SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
@@ -52,6 +64,13 @@ public class RobotContainer {
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
+
+    try {
+      shooterDataTable = new ShooterDataTable(null, null); 
+    } catch (NotEnoughPointsException e) {
+      throw new RuntimeException(e);
+    }
+
     try {
       poseEstimator =
           new PoseEstimator(
@@ -60,6 +79,11 @@ public class RobotContainer {
               swerveDrive.swerveDrivePoseEstimator::getEstimatedPosition,
               swerveDrive::getModulePositions,
               swerveDrive.swerveDrivePoseEstimator::update);
+      noteDetector = new NoteDetector(photonCamera, poseEstimator);
+      intake = new Intake();
+      shooter = new Shooter(shooterDataTable, poseEstimator);
+      indexer = new Indexer(shooterDataTable, poseEstimator);
+
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -73,6 +97,8 @@ public class RobotContainer {
     } catch (NotEnoughPointsException e) {
       throw new RuntimeException(e); // GG go next
     }
+    
+    superstructure = new Superstructure(intake, indexer, shooter, drivebase, noteDetector, poseEstimator);
 
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(
@@ -82,7 +108,10 @@ public class RobotContainer {
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
     configureBindings();
 
-    autoChooser = AutoBuilder.buildAutoChooser();
+    autoChooser.addOption("Top with amp", superstructure.fromTopWithAmp());
+    autoChooser.addOption("Top with no amp", superstructure.fromTopWithoutAmp());
+    autoChooser.addOption("Bottom with no amp", superstructure.fromBottomWithoutAmp());
+    autoChooser.addOption("Middle with no amp", superstructure.fromStartingMiddleWithoutAmp());
   }
 
   private void configureBindings() {
