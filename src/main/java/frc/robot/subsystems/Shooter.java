@@ -1,27 +1,27 @@
-  package frc.robot.subsystems;
+package frc.robot.subsystems;
 
-  import static edu.wpi.first.units.MutableMeasure.mutable;
-  import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.MutableMeasure.mutable;
+import static edu.wpi.first.units.Units.*;
 
-  import com.ctre.phoenix6.hardware.TalonFX;
-  import com.revrobotics.CANSparkLowLevel;
-  import com.revrobotics.CANSparkMax;
-  import edu.wpi.first.networktables.*;
-  import edu.wpi.first.units.*;
-  import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
-  import edu.wpi.first.wpilibj2.command.Command;
-  import edu.wpi.first.wpilibj2.command.InstantCommand;
-  import edu.wpi.first.wpilibj2.command.SubsystemBase;
-  import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
-  import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-  import frc.robot.ShooterDataTable;
-  import frc.robot.ShooterSpec;
-  import frc.robot.inputs.PoseEstimator;
-  import frc.robot.lib.SimpleVelocitySystem;
-  import lombok.Getter;
-  import monologue.Annotations.Log;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.revrobotics.CANSparkLowLevel;
+import com.revrobotics.CANSparkMax;
+import edu.wpi.first.networktables.*;
+import edu.wpi.first.units.*;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.ShooterDataTable;
+import frc.robot.ShooterSpec;
+import frc.robot.inputs.PoseEstimator;
+import frc.robot.lib.SimpleVelocitySystem;
+import lombok.Getter;
+import monologue.Annotations.Log;
 
-  public class Shooter extends SubsystemBase {
+public class Shooter extends SubsystemBase {
   // TODO: fill in values
   private static final int LEFT_DRIVE_ID = 0;
   private static final int RIGHT_DRIVE_ID = 0;
@@ -29,8 +29,7 @@
   private static final int FOLLOW_TRIGGER_ID = 0;
   private static final Measure<Voltage> kS = Volts.of(.01);
   private static final Measure<Per<Voltage, Velocity<Angle>>> kV = VoltsPerRadianPerSecond.of(.087);
-  private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA =
-      VoltsPerRadianPerSecondSquared.of(0.06);
+  private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA = VoltsPerRadianPerSecondSquared.of(0.06);
   private static final double MAX_ERROR = 5;
   private static final double MAX_CONTROL_EFFORT = 8;
   private static final double MODEL_DEVIATION = 1;
@@ -38,26 +37,26 @@
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
 
   private final PoseEstimator poseEstimator;
-  private final TalonFX driveL =
-      new TalonFX(LEFT_DRIVE_ID, "rio"); // TODO: Make sure the canbus is right.
+  private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "rio"); // TODO: Make sure the canbus is right.
   private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "rio");
-  private final CANSparkMax leadTrigger =
-      new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
-  private final CANSparkMax followTrigger =
-      new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
+  private final CANSparkMax leadTrigger = new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
+  private final CANSparkMax followTrigger = new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
   private final MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
   private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Second).of(0));
-  @Getter @Log.NT private State state = State.IDLE;
+  @Getter
+  @Log.NT
+  private State state = State.IDLE;
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
+  private final NetworkTable networkTable;
   private final DoubleSubscriber speedLSubscriber;
   private final DoubleSubscriber speedRSubscriber;
 
   public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
-    NetworkTable networkTable = NetworkTableInstance.getDefault().getTable("Test");
+    networkTable = NetworkTableInstance.getDefault().getTable("Test");
 
     speedLSubscriber = networkTable.getDoubleTopic("speedL (RPS)").subscribe(0.0);
     speedRSubscriber = networkTable.getDoubleTopic("speedR (RPS)").subscribe(0.0);
@@ -66,42 +65,38 @@
 
     this.table = table;
 
-    sysL =
-        new SimpleVelocitySystem(
-            kS.in(Volts),
-            kV.in(VoltsPerRadianPerSecond),
-            kA.in(VoltsPerRadianPerSecondSquared),
-            MAX_ERROR,
-            MAX_CONTROL_EFFORT,
-            MODEL_DEVIATION,
-            ENCODER_DEVIATION,
-            LOOP_TIME.in(Seconds));
-    sysR =
-        new SimpleVelocitySystem(
-            kS.in(Volts),
-            kV.in(VoltsPerRadianPerSecond),
-            kA.in(VoltsPerRadianPerSecondSquared),
-            MAX_ERROR,
-            MAX_CONTROL_EFFORT,
-            MODEL_DEVIATION,
-            ENCODER_DEVIATION,
-            LOOP_TIME.in(Seconds));
-    routineL =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
-            new SysIdRoutine.Mechanism(
-                (Measure<Voltage> volts) -> driveL.setVoltage(volts.in(Volts)),
-                this::logL,
-                this,
-                "left-flywheel-motor"));
-    routineR =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
-            new SysIdRoutine.Mechanism(
-                (Measure<Voltage> volts) -> driveR.setVoltage(volts.in(Volts)),
-                this::logR,
-                this,
-                "right flywheel motor"));
+    sysL = new SimpleVelocitySystem(
+        kS.in(Volts),
+        kV.in(VoltsPerRadianPerSecond),
+        kA.in(VoltsPerRadianPerSecondSquared),
+        MAX_ERROR,
+        MAX_CONTROL_EFFORT,
+        MODEL_DEVIATION,
+        ENCODER_DEVIATION,
+        LOOP_TIME.in(Seconds));
+    sysR = new SimpleVelocitySystem(
+        kS.in(Volts),
+        kV.in(VoltsPerRadianPerSecond),
+        kA.in(VoltsPerRadianPerSecondSquared),
+        MAX_ERROR,
+        MAX_CONTROL_EFFORT,
+        MODEL_DEVIATION,
+        ENCODER_DEVIATION,
+        LOOP_TIME.in(Seconds));
+    routineL = new SysIdRoutine(
+        new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+        new SysIdRoutine.Mechanism(
+            (Measure<Voltage> volts) -> driveL.setVoltage(volts.in(Volts)),
+            this::logL,
+            this,
+            "left-flywheel-motor"));
+    routineR = new SysIdRoutine(
+        new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+        new SysIdRoutine.Mechanism(
+            (Measure<Voltage> volts) -> driveR.setVoltage(volts.in(Volts)),
+            this::logR,
+            this,
+            "right flywheel motor"));
     this.poseEstimator = poseEstimator;
   }
 
@@ -220,4 +215,4 @@
     SYSID, // for system identification
     FIRING,
   }
-  }
+}

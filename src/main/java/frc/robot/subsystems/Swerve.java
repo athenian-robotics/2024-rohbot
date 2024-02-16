@@ -8,6 +8,9 @@ import com.pathplanner.lib.util.ReplanningConfig;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -25,14 +28,18 @@ public class Swerve extends SubsystemBase {
   private final SwerveDrive swerveDrive;
   private final ShooterDataTable table;
   private final PoseEstimator poseEstimator;
+  private final NetworkTable networkTable;
   private final Measure<Velocity<Velocity<Distance>>> MAXIMUM_ACCELERATION =
       Units.MetersPerSecondPerSecond.of(4); // TODO: Fill
   private final Measure<Velocity<Velocity<Angle>>> MAXIMUM_ANGULAR_ACCELERATION =
       Units.DegreesPerSecond.per(Units.Seconds).of(720); // TODO: Fill
+  private final DoubleSubscriber offsetSubscriber;
 
   public Swerve(
       SwerveDrive swerveDrive, ShooterDataTable shooterDataTable, PoseEstimator poseEstimator) {
     this.swerveDrive = swerveDrive;
+    networkTable = NetworkTableInstance.getDefault().getTable("Test");
+    offsetSubscriber = networkTable.getDoubleTopic("speedL (RPS)").subscribe(0.0);
 
     this.table = shooterDataTable;
     this.poseEstimator = poseEstimator;
@@ -94,6 +101,21 @@ public class Swerve extends SubsystemBase {
   }
 
   public Command faceSpeaker() {
+    return AutoBuilder.pathfindToPose(
+        new Pose2d(
+            poseEstimator.getPosition(),
+            poseEstimator
+                .translationToSpeaker()
+                .getAngle()
+                .plus(new Rotation2d(table.get(poseEstimator.translationToSpeaker()).offset()))),
+        new PathConstraints(
+            swerveDrive.getMaximumVelocity(),
+            MAXIMUM_ACCELERATION.in(Units.MetersPerSecondPerSecond),
+            swerveDrive.getMaximumAngularVelocity(),
+            MAXIMUM_ANGULAR_ACCELERATION.in(Units.RadiansPerSecond.per(Units.Seconds))));
+  }
+
+  public Command testFaceSpeaker() {
     return AutoBuilder.pathfindToPose(
         new Pose2d(
             poseEstimator.getPosition(),
