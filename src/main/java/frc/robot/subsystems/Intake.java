@@ -2,7 +2,7 @@ package frc.robot.subsystems;
 
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.Rev2mDistanceSensor;
+import com.playingwithfusion.TimeOfFlight;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
@@ -18,7 +18,7 @@ public class Intake extends SubsystemBase {
   private static final Measure<Distance> NOTE_PASSED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private final CANSparkMax leadMotor;
   private final CANSparkMax followMotor;
-  private final Rev2mDistanceSensor sensor;
+  private final TimeOfFlight sensor;
 
   @Getter private State state;
 
@@ -27,7 +27,7 @@ public class Intake extends SubsystemBase {
     followMotor = new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followMotor.follow(leadMotor);
     sensor =
-        new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
+        new TimeOfFlight(0); // TODO: Fill in the sensor id
     state = State.NO_NOTE;
   }
 
@@ -52,14 +52,14 @@ public class Intake extends SubsystemBase {
     switch (state) {
       case NO_NOTE:
         leadMotor.set(1); // TODO: Tune speed
-        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
+        if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
             < NOTE_FOUND_THRESHOLD.in(Units.Inches)) {
           state = State.NOTE_FOUND;
         }
         break;
       case NOTE_FOUND:
         leadMotor.set(1); // TODO: Tune
-        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
+        if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
             > NOTE_PASSED_THRESHOLD.in(Units.Inches)) {
           state = State.NOTE_PASSED;
         }

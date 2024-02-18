@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.ShooterDataTable;
 import frc.robot.inputs.PoseEstimator;
+import com.playingwithfusion.TimeOfFlight;
 import lombok.Getter;
 
 public class Indexer extends SubsystemBase {
@@ -40,7 +41,7 @@ public class Indexer extends SubsystemBase {
   private final CANSparkMax indexMotor;
   private final CANSparkMax leadAngleMotor;
   private final CANSparkMax followAngleMotor;
-  private final Rev2mDistanceSensor sensor;
+  private final TimeOfFlight sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
   @Getter private State state;
@@ -55,7 +56,7 @@ public class Indexer extends SubsystemBase {
     followAngleMotor.follow(leadAngleMotor);
     this.table = table;
     sensor =
-        new Rev2mDistanceSensor(Rev2mDistanceSensor.Port.kOnboard); // TODO: Figure out right value
+        new TimeOfFlight(0); // TODO: Fill with the right sensor id
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
@@ -128,7 +129,7 @@ public class Indexer extends SubsystemBase {
       }
       case LOADING -> {
         indexMotor.set(1); // TODO: Tune
-        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
+        if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
             < NOTE_LOADED_THRESHOLD.in(Units.Inches)) {
           state = State.LOADED;
         }
@@ -143,7 +144,7 @@ public class Indexer extends SubsystemBase {
       }
       case FIRING -> {
         indexMotor.set(1); // TODO: Tune
-        if (sensor.getRange(Rev2mDistanceSensor.Unit.kInches)
+        if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
             < SHOT_FIRED_THRESHOLD.in(Units.Inches)) {
           state = State.EMPTY;
         }
