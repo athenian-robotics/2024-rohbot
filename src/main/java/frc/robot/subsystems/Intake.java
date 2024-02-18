@@ -7,7 +7,6 @@ import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import lombok.Getter;
 
@@ -43,7 +42,7 @@ public class Intake extends SubsystemBase {
   }
 
   public Command startIntake() {
-    return new InstantCommand(() -> state = State.NO_NOTE, this);
+    return runOnce(() -> state = State.NO_NOTE);
   }
 
   @Override

@@ -1,9 +1,11 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 
 import com.playingwithfusion.TimeOfFlight;
-import com.revrobotics.*;
+import com.revrobotics.CANSparkLowLevel;
+import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.LinearQuadraticRegulator;
@@ -15,7 +17,6 @@ import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.ShooterDataTable;
@@ -111,15 +112,15 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command startLoading() {
-    return new InstantCommand(() -> state = State.LOADING, this);
+    return runOnce(() -> state = State.LOADING);
   }
 
   public Command waitUntilReady() {
-    return new WaitUntilCommand(() -> state == State.READY);
+    return waitUntil(() -> state == State.READY);
   }
 
   public Command fire() {
-    return new InstantCommand(() -> state = State.FIRING, this);
+    return runOnce(() -> state = State.FIRING);
   }
 
   @Override

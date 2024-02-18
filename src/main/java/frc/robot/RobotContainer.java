@@ -25,15 +25,15 @@ import swervelib.telemetry.SwerveDriveTelemetry;
 
 public class RobotContainer {
 
-  private final Swerve drivebase;
-
   private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
-  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   static {
     SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
   }
+
+  private final Swerve drivebase;
+  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public RobotContainer() {
     // Angle conversion factor = 360 / (GEAR RATIO * ENCODER RESOLUTION)

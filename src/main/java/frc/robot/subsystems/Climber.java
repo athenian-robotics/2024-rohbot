@@ -28,26 +28,26 @@ public class Climber extends SubsystemBase {
   }
 
   public Command telescopeUp() {
-    return new StartEndCommand(() -> setTelescopeSpeed(0.5), () -> setTelescopeSpeed(0), this);
+    return startEnd(() -> setTelescopeSpeed(0.5), () -> setTelescopeSpeed(0));
   }
 
   public Command telescopeDown() {
-    return new StartEndCommand(() -> setTelescopeSpeed(-0.5), () -> setTelescopeSpeed(0), this);
+    return startEnd(() -> setTelescopeSpeed(-0.5), () -> setTelescopeSpeed(0));
   }
 
   public Command leftUp() {
-    return new StartEndCommand(() -> leftMotor.set(0.5), () -> leftMotor.set(0), this);
+    return startEnd(() -> leftMotor.set(0.5), () -> leftMotor.set(0));
   }
 
   public Command leftDown() {
-    return new StartEndCommand(() -> leftMotor.set(-0.5), () -> leftMotor.set(0), this);
+    return startEnd(() -> leftMotor.set(-0.5), () -> leftMotor.set(0));
   }
 
   public Command rightUp() {
-    return new StartEndCommand(() -> rightMotor.set(0.5), () -> rightMotor.set(0), this);
+    return startEnd(() -> rightMotor.set(0.5), () -> rightMotor.set(0));
   }
 
   public Command rightDown() {
-    return new StartEndCommand(() -> rightMotor.set(-0.5), () -> rightMotor.set(0), this);
+    return startEnd(() -> rightMotor.set(-0.5), () -> rightMotor.set(0));
   }
 }

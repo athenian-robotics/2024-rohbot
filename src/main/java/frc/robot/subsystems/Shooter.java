@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.revrobotics.CANSparkLowLevel;
@@ -9,7 +10,6 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -48,9 +48,9 @@ public class Shooter extends SubsystemBase {
   private final ShooterDataTable table;
   private final MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
   private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Second).of(0));
-  @Getter @Log.NT private State state = State.IDLE;
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
+  @Getter @Log.NT private State state = State.IDLE;
 
   public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
 
@@ -130,19 +130,19 @@ public class Shooter extends SubsystemBase {
   }
 
   public Command requestShot() {
-    return new InstantCommand(() -> state = State.APPROACHING, this);
+    return runOnce(() -> state = State.APPROACHING);
   }
 
   public Command idle() {
-    return new InstantCommand(() -> state = State.IDLE, this);
+    return runOnce(() -> state = State.IDLE);
   }
 
   public Command waitUntilReady() {
-    return new WaitUntilCommand(() -> state == State.READY);
+    return waitUntil(() -> state == State.READY);
   }
 
   public Command testing() {
-    return new InstantCommand(() -> state = State.TESTING);
+    return runOnce(() -> state = State.TESTING);
   }
 
   public Command sysIdQuasistaticL(SysIdRoutine.Direction direction) {
@@ -166,7 +166,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public Command fire() {
-    return new InstantCommand(() -> state = State.FIRING, this);
+    return runOnce(() -> state = State.FIRING);
   }
 
   @Override

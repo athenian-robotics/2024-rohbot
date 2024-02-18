@@ -22,6 +22,18 @@ public class BarycentricInterpolation {
     triangulator.triangulate();
   }
 
+  public static void main(String[] args) throws NotEnoughPointsException {
+    // Example usage
+    double[] xValues = {0, 0, 1};
+    double[] yValues = {0, 1, 0};
+    double[] zValues = {10, 20, 30};
+
+    BarycentricInterpolation interpolator = new BarycentricInterpolation(xValues, yValues, zValues);
+
+    double result = interpolator.interpolate(0, 0);
+    System.out.println("Interpolated value: " + result);
+  }
+
   public double interpolate(double xVal, double yVal) {
     System.out.println(triangulator.getTriangles());
     var triangles = triangulator.getTriangles();
@@ -68,17 +80,5 @@ public class BarycentricInterpolation {
     // Check if vector2D is within the bounding box of the line segment
     double dotProduct = bc.dot(bv);
     return !(dotProduct < 0) && !(dotProduct > bc.mag() * bc.mag()); // Outside the line segment
-  }
-
-  public static void main(String[] args) throws NotEnoughPointsException {
-    // Example usage
-    double[] xValues = {0, 0, 1};
-    double[] yValues = {0, 1, 0};
-    double[] zValues = {10, 20, 30};
-
-    BarycentricInterpolation interpolator = new BarycentricInterpolation(xValues, yValues, zValues);
-
-    double result = interpolator.interpolate(0, 0);
-    System.out.println("Interpolated value: " + result);
   }
 }
