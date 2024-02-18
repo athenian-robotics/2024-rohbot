@@ -8,13 +8,12 @@ import frc.robot.lib.BarycentricInterpolation;
 import io.github.jdiemke.triangulation.NotEnoughPointsException;
 
 public class ShooterDataTable {
-  private BarycentricInterpolation interpolatorAngle;
-  private BarycentricInterpolation interpolatorSpeedL;
-  private BarycentricInterpolation interpolatorSpeedR;
-  private BarycentricInterpolation interpolatorOffset;
+  private final BarycentricInterpolation interpolatorAngle;
+  private final BarycentricInterpolation interpolatorSpeedL;
+  private final BarycentricInterpolation interpolatorSpeedR;
+  private final BarycentricInterpolation interpolatorOffset;
 
-  public ShooterDataTable(Translation2d[] points, ShooterSpec[] specs)
-      throws NotEnoughPointsException {
+  public ShooterDataTable(Translation2d[] points, ShooterSpec[] specs) {
     double[] x = new double[points.length];
     double[] y = new double[points.length];
     double[] angle = new double[points.length];

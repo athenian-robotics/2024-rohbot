@@ -21,8 +21,6 @@ import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 public class PoseEstimator implements Subsystem {
   private static final Translation2d BLUE_SPEAKER_POSITION = new Translation2d(-1.5, 218.42);
   private static final Translation2d RED_SPEAKER_POSITION = new Translation2d(652.73, 218.42);
-  private final AprilTagFieldLayout aprilTagFieldLayout;
-  private final Transform3d robotToCam;
   private final PhotonPoseEstimator photonPoseEstimator;
   private final Pigeon2 gyro;
   private final BiConsumer<Pose2d, Double> addVisionMeasurement;
@@ -43,10 +41,10 @@ public class PoseEstimator implements Subsystem {
     this.getModulePositions = getModulePositions;
     this.update = update;
     gyro = new Pigeon2(13, "*");
-    aprilTagFieldLayout =
+    AprilTagFieldLayout aprilTagFieldLayout =
         AprilTagFieldLayout.loadFromResource(AprilTagFields.k2024Crescendo.m_resourceFile);
 
-    robotToCam =
+    Transform3d robotToCam =
         new Transform3d(
             new Translation3d(
                 Units.inchesToMeters(14.5), Units.inchesToMeters(4.5), Units.inchesToMeters(18)),

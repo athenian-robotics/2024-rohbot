@@ -8,13 +8,14 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
+import lombok.Getter;
 
 /** Defines a simple velocity system using a kalman filter and a linear quadratic regulator */
 public class SimpleVelocitySystem {
   private final double kS;
 
   private final double maxControlEffort; // volts
-  private final LinearSystem<N1, N1, N1> system;
+  @Getter private final LinearSystem<N1, N1, N1> system;
   private final LinearQuadraticRegulator<N1, N1, N1> regulator;
   private final KalmanFilter<N1, N1, N1> filter;
   private final LinearSystemLoop<N1, N1, N1> loop;
@@ -48,6 +49,8 @@ public class SimpleVelocitySystem {
   }
 
   /**
+   * Sets output
+   *
    * @param output The desired output of the system
    */
   public void set(double output) {
@@ -55,6 +58,8 @@ public class SimpleVelocitySystem {
   }
 
   /**
+   * Updates the system
+   *
    * @param current The measured velocity by the encoder
    */
   public void update(double current) {
@@ -64,6 +69,8 @@ public class SimpleVelocitySystem {
   }
 
   /**
+   * Gets output
+   *
    * @return The percent output that the controller should run at
    */
   public double getOutput() {
@@ -73,10 +80,6 @@ public class SimpleVelocitySystem {
   /** Get the filtered velocity of the system */
   public double getVelocity() {
     return filteredVelocity; // loop.getXHat(0);
-  }
-
-  public LinearSystem<N1, N1, N1> getSystem() {
-    return system;
   }
 
   public LinearQuadraticRegulator<N1, N1, N1> getLQR() {

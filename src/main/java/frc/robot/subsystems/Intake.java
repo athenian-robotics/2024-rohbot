@@ -1,8 +1,8 @@
 package frc.robot.subsystems;
 
+import com.playingwithfusion.TimeOfFlight;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
-import com.playingwithfusion.TimeOfFlight;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
@@ -17,17 +17,16 @@ public class Intake extends SubsystemBase {
   private static final Measure<Distance> NOTE_FOUND_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Distance> NOTE_PASSED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private final CANSparkMax leadMotor;
-  private final CANSparkMax followMotor;
   private final TimeOfFlight sensor;
 
   @Getter private State state;
 
   public Intake() {
     leadMotor = new CANSparkMax(LEAD_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    followMotor = new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    CANSparkMax followMotor =
+        new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followMotor.follow(leadMotor);
-    sensor =
-        new TimeOfFlight(0); // TODO: Fill in the sensor id
+    sensor = new TimeOfFlight(0); // TODO: Fill in the sensor id
     state = State.NO_NOTE;
   }
 

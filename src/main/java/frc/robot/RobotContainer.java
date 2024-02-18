@@ -1,6 +1,5 @@
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
@@ -16,7 +15,6 @@ import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
-import io.github.jdiemke.triangulation.NotEnoughPointsException;
 import java.io.File;
 import java.io.IOException;
 import org.photonvision.PhotonCamera;
@@ -26,22 +24,12 @@ import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 
 public class RobotContainer {
-  private final Measure<Velocity<Distance>> maximumSpeed = Units.FeetPerSecond.of(20);
 
   private final Swerve drivebase;
-  private final PoseEstimator poseEstimator;
-  private final Intake intake;
-  private final Shooter shooter;
-  private final Indexer indexer;
-  private final NoteDetector noteDetector;
-  private final ShooterDataTable shooterDataTable; // TODO: Ensure to get the actual points
 
   private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
-  private final SwerveDrive swerveDrive;
-  private final Superstructure superstructure;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
-  private final PhotonCamera photonCamera = new PhotonCamera("photonvision"); // TODO: Remember to replace with the actual camera name
 
   static {
     SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
@@ -54,7 +42,9 @@ public class RobotContainer {
     // Motor conversion factor is (PI * WHEEL DIAMETER IN METERS) / (GEAR RATIO *
     // ENCODER RESOLUTION).
     double driveConversionFactor = SwerveMath.calculateMetersPerRotation(0, 6.75, 1);
+    SwerveDrive swerveDrive;
     try {
+      Measure<Velocity<Distance>> maximumSpeed = Units.FeetPerSecond.of(20);
       swerveDrive =
           new SwerveParser(new File(Filesystem.getDeployDirectory(), "swerve"))
               .createSwerveDrive(
@@ -65,12 +55,15 @@ public class RobotContainer {
       throw new RuntimeException(e);
     }
 
-    try {
-      shooterDataTable = new ShooterDataTable(null, null); 
-    } catch (NotEnoughPointsException e) {
-      throw new RuntimeException(e);
-    }
+    // TODO: Ensure to get the actual points
+    ShooterDataTable shooterDataTable;
+    shooterDataTable = new ShooterDataTable(null, null);
 
+    PoseEstimator poseEstimator;
+    Intake intake;
+    Shooter shooter;
+    Indexer indexer;
+    NoteDetector noteDetector;
     try {
       poseEstimator =
           new PoseEstimator(
@@ -79,6 +72,8 @@ public class RobotContainer {
               swerveDrive.swerveDrivePoseEstimator::getEstimatedPosition,
               swerveDrive::getModulePositions,
               swerveDrive.swerveDrivePoseEstimator::update);
+      // TODO: Remember to replace with the actual camera name
+      PhotonCamera photonCamera = new PhotonCamera("photonvision");
       noteDetector = new NoteDetector(photonCamera, poseEstimator);
       intake = new Intake();
       shooter = new Shooter(shooterDataTable, poseEstimator);
@@ -88,17 +83,14 @@ public class RobotContainer {
       throw new RuntimeException(e);
     }
 
-    try {
-      drivebase =
-          new Swerve(
-              swerveDrive,
-              new ShooterDataTable(new Translation2d[] {}, new ShooterSpec[] {}),
-              poseEstimator);
-    } catch (NotEnoughPointsException e) {
-      throw new RuntimeException(e); // GG go next
-    }
-    
-    superstructure = new Superstructure(intake, indexer, shooter, drivebase, noteDetector, poseEstimator);
+    drivebase =
+        new Swerve(
+            swerveDrive,
+            new ShooterDataTable(new Translation2d[] {}, new ShooterSpec[] {}),
+            poseEstimator);
+
+    Superstructure superstructure =
+        new Superstructure(intake, indexer, shooter, drivebase, noteDetector, poseEstimator);
 
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(

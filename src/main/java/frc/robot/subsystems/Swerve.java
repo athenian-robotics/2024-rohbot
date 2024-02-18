@@ -17,12 +17,13 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.inputs.PoseEstimator;
 import java.util.function.DoubleSupplier;
+import lombok.Getter;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
 
 public class Swerve extends SubsystemBase {
 
-  private final SwerveDrive swerveDrive;
+  @Getter private final SwerveDrive swerveDrive;
   private final ShooterDataTable table;
   private final PoseEstimator poseEstimator;
   private final Measure<Velocity<Velocity<Distance>>> MAXIMUM_ACCELERATION =
@@ -106,9 +107,5 @@ public class Swerve extends SubsystemBase {
             MAXIMUM_ACCELERATION.in(Units.MetersPerSecondPerSecond),
             swerveDrive.getMaximumAngularVelocity(),
             MAXIMUM_ANGULAR_ACCELERATION.in(Units.RadiansPerSecond.per(Units.Seconds))));
-  }
-
-  public SwerveDrive getSwerveDrive() {
-    return swerveDrive;
   }
 }

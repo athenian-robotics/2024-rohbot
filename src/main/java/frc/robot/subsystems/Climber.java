@@ -7,13 +7,14 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Climber extends SubsystemBase {
-  private final int LEFT_MOTOR_ID = 15; // TODO: add motor ports
-  private final int RIGHT_MOTOR_ID = 16;
-  private TalonFX leftMotor;
-  private TalonFX rightMotor;
+  private final TalonFX leftMotor;
+  private final TalonFX rightMotor;
 
   public Climber() {
+    // TODO: add motor ports
+    int LEFT_MOTOR_ID = 15;
     leftMotor = new TalonFX(LEFT_MOTOR_ID);
+    int RIGHT_MOTOR_ID = 16;
     rightMotor = new TalonFX(RIGHT_MOTOR_ID);
     leftMotor.setInverted(true); // TODO: Change based on change
     rightMotor.setInverted(true);
@@ -27,25 +28,11 @@ public class Climber extends SubsystemBase {
   }
 
   public Command telescopeUp() {
-    return new StartEndCommand(
-        () -> {
-          setTelescopeSpeed(0.5);
-        },
-        () -> {
-          setTelescopeSpeed(0);
-        },
-        this);
+    return new StartEndCommand(() -> setTelescopeSpeed(0.5), () -> setTelescopeSpeed(0), this);
   }
 
   public Command telescopeDown() {
-    return new StartEndCommand(
-        () -> {
-          setTelescopeSpeed(-0.5);
-        },
-        () -> {
-          setTelescopeSpeed(0);
-        },
-        this);
+    return new StartEndCommand(() -> setTelescopeSpeed(-0.5), () -> setTelescopeSpeed(0), this);
   }
 
   public Command leftUp() {

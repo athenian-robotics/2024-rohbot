@@ -33,7 +33,8 @@ public class Shooter extends SubsystemBase {
   private static final double MAX_ERROR = 5;
   private static final double MAX_CONTROL_EFFORT = 8;
   private static final double MODEL_DEVIATION = 1;
-  private static final double ENCODER_DEVIATION = 1 / 42.0; // 1 tick of built in neo encoder
+  private static final double ENCODER_DEVIATION =
+      1 / 42.0; // 1 tick of built-in neo encoder with reduction
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
 
   private final PoseEstimator poseEstimator;
@@ -42,8 +43,6 @@ public class Shooter extends SubsystemBase {
   private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "rio");
   private final CANSparkMax leadTrigger =
       new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
-  private final CANSparkMax followTrigger =
-      new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
@@ -55,6 +54,8 @@ public class Shooter extends SubsystemBase {
 
   public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
 
+    CANSparkMax followTrigger =
+        new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
     followTrigger.follow(leadTrigger);
 
     this.table = table;
@@ -129,11 +130,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public Command requestShot() {
-    return new InstantCommand(
-        () -> {
-          state = State.APPROACHING;
-        },
-        this);
+    return new InstantCommand(() -> state = State.APPROACHING, this);
   }
 
   public Command idle() {

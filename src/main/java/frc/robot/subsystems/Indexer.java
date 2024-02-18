@@ -1,5 +1,8 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degrees;
+
+import com.playingwithfusion.TimeOfFlight;
 import com.revrobotics.*;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
@@ -17,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.ShooterDataTable;
 import frc.robot.inputs.PoseEstimator;
-import com.playingwithfusion.TimeOfFlight;
 import lombok.Getter;
 
 public class Indexer extends SubsystemBase {
@@ -32,15 +34,15 @@ public class Indexer extends SubsystemBase {
   private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = null;
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_STANDARD_DEVIATION = null;
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE = null;
-  private static final Measure<Angle> TICKS_TO_ANGLE = null; // TODO: adjust for this year's robot
+  private static final Measure<Angle> TICKS_TO_ANGLE =
+      Degrees.of(0); // TODO: adjust for this year's robot
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Distance> NOTE_LOADED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
-  private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Seconds).of(50);
+  private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
   private final PoseEstimator poseEstimator;
   private final CANSparkMax indexMotor;
   private final CANSparkMax leadAngleMotor;
-  private final CANSparkMax followAngleMotor;
   private final TimeOfFlight sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
@@ -51,12 +53,11 @@ public class Indexer extends SubsystemBase {
   public Indexer(ShooterDataTable table, final PoseEstimator poseEstimator) {
     indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    followAngleMotor =
+    CANSparkMax followAngleMotor =
         new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followAngleMotor.follow(leadAngleMotor);
     this.table = table;
-    sensor =
-        new TimeOfFlight(0); // TODO: Fill with the right sensor id
+    sensor = new TimeOfFlight(0); // TODO: Fill with the right sensor id
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
@@ -124,9 +125,7 @@ public class Indexer extends SubsystemBase {
   @Override
   public void periodic() {
     switch (state) {
-      case EMPTY, READY -> {
-        indexMotor.set(0);
-      }
+      case EMPTY, READY -> indexMotor.set(0);
       case LOADING -> {
         indexMotor.set(1); // TODO: Tune
         if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
