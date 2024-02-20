@@ -11,7 +11,6 @@ import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
@@ -28,21 +27,17 @@ public class Shooter extends SubsystemBase {
   private static final int FOLLOW_TRIGGER_ID = 0;
   private static final Measure<Voltage> kS = Volts.of(.01);
   private static final Measure<Per<Voltage, Velocity<Angle>>> kV = VoltsPerRadianPerSecond.of(.087);
-  private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA =
-      VoltsPerRadianPerSecondSquared.of(0.06);
+  private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA = VoltsPerRadianPerSecondSquared.of(0.06);
   private static final double MAX_ERROR = 5;
   private static final double MAX_CONTROL_EFFORT = 8;
   private static final double MODEL_DEVIATION = 1;
-  private static final double ENCODER_DEVIATION =
-      1 / 42.0; // 1 tick of built-in neo encoder with reduction
+  private static final double ENCODER_DEVIATION = 1 / 42.0; // 1 tick of built-in neo encoder with reduction
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
 
   private final PoseEstimator poseEstimator;
-  private final TalonFX driveL =
-      new TalonFX(LEFT_DRIVE_ID, "rio"); // TODO: Make sure the canbus is right.
+  private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "rio"); // TODO: Make sure the canbus is right.
   private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "rio");
-  private final CANSparkMax leadTrigger =
-      new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
+  private final CANSparkMax leadTrigger = new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
@@ -50,52 +45,49 @@ public class Shooter extends SubsystemBase {
   private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Second).of(0));
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
-  @Getter @Log.NT private State state = State.IDLE;
+  @Getter
+  @Log.NT
+  private State state = State.IDLE;
 
   public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
 
-    CANSparkMax followTrigger =
-        new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
+    CANSparkMax followTrigger = new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
     followTrigger.follow(leadTrigger);
 
     this.table = table;
 
-    sysL =
-        new SimpleVelocitySystem(
-            kS.in(Volts),
-            kV.in(VoltsPerRadianPerSecond),
-            kA.in(VoltsPerRadianPerSecondSquared),
-            MAX_ERROR,
-            MAX_CONTROL_EFFORT,
-            MODEL_DEVIATION,
-            ENCODER_DEVIATION,
-            LOOP_TIME.in(Seconds));
-    sysR =
-        new SimpleVelocitySystem(
-            kS.in(Volts),
-            kV.in(VoltsPerRadianPerSecond),
-            kA.in(VoltsPerRadianPerSecondSquared),
-            MAX_ERROR,
-            MAX_CONTROL_EFFORT,
-            MODEL_DEVIATION,
-            ENCODER_DEVIATION,
-            LOOP_TIME.in(Seconds));
-    routineL =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
-            new SysIdRoutine.Mechanism(
-                (Measure<Voltage> volts) -> driveL.setVoltage(volts.in(Volts)),
-                this::logL,
-                this,
-                "left-flywheel-motor"));
-    routineR =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
-            new SysIdRoutine.Mechanism(
-                (Measure<Voltage> volts) -> driveR.setVoltage(volts.in(Volts)),
-                this::logR,
-                this,
-                "right flywheel motor"));
+    sysL = new SimpleVelocitySystem(
+        kS.in(Volts),
+        kV.in(VoltsPerRadianPerSecond),
+        kA.in(VoltsPerRadianPerSecondSquared),
+        MAX_ERROR,
+        MAX_CONTROL_EFFORT,
+        MODEL_DEVIATION,
+        ENCODER_DEVIATION,
+        LOOP_TIME.in(Seconds));
+    sysR = new SimpleVelocitySystem(
+        kS.in(Volts),
+        kV.in(VoltsPerRadianPerSecond),
+        kA.in(VoltsPerRadianPerSecondSquared),
+        MAX_ERROR,
+        MAX_CONTROL_EFFORT,
+        MODEL_DEVIATION,
+        ENCODER_DEVIATION,
+        LOOP_TIME.in(Seconds));
+    routineL = new SysIdRoutine(
+        new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+        new SysIdRoutine.Mechanism(
+            (Measure<Voltage> volts) -> driveL.setVoltage(volts.in(Volts)),
+            this::logL,
+            this,
+            "left-flywheel-motor"));
+    routineR = new SysIdRoutine(
+        new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+        new SysIdRoutine.Mechanism(
+            (Measure<Voltage> volts) -> driveR.setVoltage(volts.in(Volts)),
+            this::logR,
+            this,
+            "right flywheel motor"));
     this.poseEstimator = poseEstimator;
   }
 
