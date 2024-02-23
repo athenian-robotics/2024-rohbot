@@ -23,9 +23,9 @@ import frc.robot.inputs.PoseEstimator;
 import lombok.Getter;
 
 public class Indexer extends SubsystemBase {
-  private static final int INDEXER_MOTOR_ID = 0; // TODO: ADD MOTOR PORTS ACCURATELY
-  private static final int LEAD_ANGLE_MOTOR_ID = 0; // TODO: port
-  private static final int FOLLOW_ANGLE_MOTOR_ID = 0; // TODO: number
+  private static final int INDEXER_MOTOR_ID = 2; // TODO: ADD MOTOR PORTS ACCURATELY
+  private static final int LEAD_ANGLE_MOTOR_ID = 11; // TODO: port
+  private static final int FOLLOW_ANGLE_MOTOR_ID = 12; // TODO: number
   private static final double kV = 0; // TODO: Sysid
   private static final double kA = 0; // TODO: sysid
   private static final double kS = 0;

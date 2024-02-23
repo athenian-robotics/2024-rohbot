@@ -11,8 +11,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import lombok.Getter;
 
 public class Intake extends SubsystemBase {
-  private static final int LEAD_MOTOR_ID = 0; // TODO: Fill out value
-  private static final int FOLLOW_MOTOR_ID = 0; // TODO: Fill
+  private static final int LEAD_MOTOR_ID = 9; // TODO: Fill out value
+  private static final int FOLLOW_MOTOR_ID = 10; // TODO: Fill
   private static final Measure<Distance> NOTE_FOUND_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Distance> NOTE_PASSED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private final CANSparkMax leadMotor;

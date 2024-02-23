@@ -55,9 +55,29 @@ public class RobotContainer {
       throw new RuntimeException(e);
     }
 
-    // TODO: Ensure to get the actual points
+    //     TODO: Ensure to get the actual points
     ShooterDataTable shooterDataTable;
-    shooterDataTable = new ShooterDataTable(null, null);
+    Translation2d[] dummyPoints =
+        new Translation2d[] {new Translation2d(), new Translation2d(), new Translation2d()};
+    ShooterSpec[] dummySpecs =
+        new ShooterSpec[] {
+          new ShooterSpec(
+              Units.Degrees.of(0),
+              Units.DegreesPerSecond.of(0),
+              Units.DegreesPerSecond.of(0),
+              Units.Degrees.of(0)),
+          new ShooterSpec(
+              Units.Degrees.of(0),
+              Units.DegreesPerSecond.of(0),
+              Units.DegreesPerSecond.of(0),
+              Units.Degrees.of(0)),
+          new ShooterSpec(
+              Units.Degrees.of(0),
+              Units.DegreesPerSecond.of(0),
+              Units.DegreesPerSecond.of(0),
+              Units.Degrees.of(0))
+        };
+    shooterDataTable = new ShooterDataTable(dummyPoints, dummySpecs);
 
     PoseEstimator poseEstimator;
     Intake intake;
@@ -75,22 +95,18 @@ public class RobotContainer {
       // TODO: Remember to replace with the actual camera name
       PhotonCamera photonCamera = new PhotonCamera("photonvision");
       noteDetector = new NoteDetector(photonCamera, poseEstimator);
-      intake = new Intake();
-      shooter = new Shooter(shooterDataTable, poseEstimator);
-      indexer = new Indexer(shooterDataTable, poseEstimator);
+      //      intake = new Intake();
+      //      shooter = new Shooter(shooterDataTable, poseEstimator);
+      //      indexer = new Indexer(shooterDataTable, poseEstimator);
 
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
 
-    drivebase =
-        new Swerve(
-            swerveDrive,
-            new ShooterDataTable(new Translation2d[] {}, new ShooterSpec[] {}),
-            poseEstimator);
+    drivebase = new Swerve(swerveDrive, shooterDataTable, poseEstimator);
 
-    Superstructure superstructure =
-        new Superstructure(intake, indexer, shooter, drivebase, noteDetector, poseEstimator);
+    //    Superstructure superstructure =
+    //        new Superstructure(intake, indexer, shooter, drivebase, noteDetector, poseEstimator);
 
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(
@@ -100,10 +116,11 @@ public class RobotContainer {
     drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
     configureBindings();
 
-    autoChooser.addOption("Top with amp", superstructure.fromTopWithAmp());
-    autoChooser.addOption("Top with no amp", superstructure.fromTopWithoutAmp());
-    autoChooser.addOption("Bottom with no amp", superstructure.fromBottomWithoutAmp());
-    autoChooser.addOption("Middle with no amp", superstructure.fromStartingMiddleWithoutAmp());
+    //    autoChooser.addOption("Top with amp", superstructure.fromTopWithAmp());
+    //    autoChooser.addOption("Top with no amp", superstructure.fromTopWithoutAmp());
+    //    autoChooser.addOption("Bottom with no amp", superstructure.fromBottomWithoutAmp());
+    //    autoChooser.addOption("Middle with no amp",
+    // superstructure.fromStartingMiddleWithoutAmp());
   }
 
   private void configureBindings() {
