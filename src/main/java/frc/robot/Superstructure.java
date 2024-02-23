@@ -83,10 +83,6 @@ public class Superstructure extends SubsystemBase {
   @Override
   public void periodic() {
     ParallelCommandGroup toDo = new ParallelCommandGroup();
-
-    if (intake.isNoteFound()) {
-      toDo.addCommands(indexer.startLoading());
-    }
     if (indexer.isInactive() && intake.isNotePassed()) { // fired note
       toDo.addCommands(intake.startIntake());
     }
@@ -98,11 +94,9 @@ public class Superstructure extends SubsystemBase {
     return shooter
         .requestShot()
         .alongWith(swerve.faceSpeaker())
+        .alongWith(indexer.fire())
         .andThen(
-            shooter
-                .waitUntilReady()
-                .alongWith(indexer.waitUntilReady())
-                .andThen(indexer.fire().alongWith(shooter.fire())));
+            shooter.waitUntilReady().alongWith(indexer.waitUntilReady()).andThen(shooter.fire()));
   }
 
   public Command fromTopWithAmp() {

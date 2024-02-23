@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Millimeters;
 import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 
 import com.playingwithfusion.TimeOfFlight;
@@ -23,7 +24,6 @@ import frc.robot.inputs.PoseEstimator;
 import lombok.Getter;
 
 public class Indexer extends SubsystemBase {
-  private static final int INDEXER_MOTOR_ID = 2; // TODO: ADD MOTOR PORTS ACCURATELY
   private static final int LEAD_ANGLE_MOTOR_ID = 11; // TODO: port
   private static final int FOLLOW_ANGLE_MOTOR_ID = 12; // TODO: number
   private static final double kV = 0; // TODO: Sysid
@@ -37,11 +37,10 @@ public class Indexer extends SubsystemBase {
   private static final Measure<Angle> TICKS_TO_ANGLE =
       Degrees.of(0); // TODO: adjust for this year's robot
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
-  private static final Measure<Distance> NOTE_LOADED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
+  private static final Measure<Angle> IDLE_ANGLE = Units.Radians.of(0);
   private final PoseEstimator poseEstimator;
-  private final CANSparkMax indexMotor;
   private final CANSparkMax leadAngleMotor;
   private final TimeOfFlight sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
@@ -51,7 +50,6 @@ public class Indexer extends SubsystemBase {
   // private final Rev2mDistanceSensor sensor;
 
   public Indexer(ShooterDataTable table, final PoseEstimator poseEstimator) {
-    indexMotor = new CANSparkMax(INDEXER_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     CANSparkMax followAngleMotor =
         new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
@@ -92,26 +90,12 @@ public class Indexer extends SubsystemBase {
     this.poseEstimator = poseEstimator;
   }
 
-  public boolean isLoading() {
-    return this.getState() == State.LOADING;
-  }
-
-  public boolean isLoaded() {
-    return this.getState() == State.LOADED;
-  }
-
-  public boolean isEmpty() {
-    return this.getState() == State.EMPTY;
+  public boolean isApproaching() {
+    return this.getState() == State.APPROACHING;
   }
 
   public boolean isInactive() {
-    return this.getState() == State.EMPTY
-        && !(this.getState() == State.LOADING)
-        && !(this.getState() == State.LOADED);
-  }
-
-  public Command startLoading() {
-    return runOnce(() -> state = State.LOADING);
+    return this.getState() == State.IDLE;
   }
 
   public Command waitUntilReady() {
@@ -119,34 +103,27 @@ public class Indexer extends SubsystemBase {
   }
 
   public Command fire() {
-    return runOnce(() -> state = State.FIRING);
+    return runOnce(() -> state = State.APPROACHING);
   }
 
   @Override
   public void periodic() {
     switch (state) {
-      case EMPTY, READY -> indexMotor.set(0);
-      case LOADING -> {
-        indexMotor.set(1); // TODO: Tune
-        if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
-            < NOTE_LOADED_THRESHOLD.in(Units.Inches)) {
-          state = State.LOADED;
-        }
-      }
-      case LOADED -> {
-        indexMotor.set(0);
+      case APPROACHING -> {
         loop.setNextR(table.get(poseEstimator.translationToSpeaker()).angle().in(Units.Radians));
         if (loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
             && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
           state = State.READY;
         }
       }
-      case FIRING -> {
-        indexMotor.set(1); // TODO: Tune
-        if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
-            < SHOT_FIRED_THRESHOLD.in(Units.Inches)) {
-          state = State.EMPTY;
+      case READY -> {
+        loop.setNextR(table.get(poseEstimator.translationToSpeaker()).angle().in(Units.Radians));
+        if (sensor.getRange() <= SHOT_FIRED_THRESHOLD.in(Millimeters)) {
+          state = State.IDLE;
         }
+      }
+      case IDLE -> {
+        loop.setNextR(IDLE_ANGLE.in(Units.Radians));
       }
     }
     loop.correct(
@@ -158,10 +135,8 @@ public class Indexer extends SubsystemBase {
   }
 
   private enum State {
-    FIRING,
-    LOADING,
-    LOADED,
+    APPROACHING,
     READY,
-    EMPTY
+    IDLE
   }
 }
