@@ -9,8 +9,11 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import lombok.Getter;
+import monologue.Logged;
 
-public class Intake extends SubsystemBase {
+import static monologue.Annotations.*;
+
+public class Intake extends SubsystemBase implements Logged {
   private static final int LEAD_MOTOR_ID = 9; // TODO: Fill out value
   private static final int FOLLOW_MOTOR_ID = 10; // TODO: Fill
   private static final Measure<Distance> NOTE_FOUND_THRESHOLD = Units.Inches.of(0); // TODO: Tune
@@ -18,7 +21,7 @@ public class Intake extends SubsystemBase {
   private final CANSparkMax leadMotor;
   private final TimeOfFlight sensor;
 
-  @Getter private State state;
+  @Log.NT @Getter private State state;
 
   public Intake() {
     leadMotor = new CANSparkMax(LEAD_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
@@ -51,6 +54,11 @@ public class Intake extends SubsystemBase {
 
   public Command toggleIntake() {
     return state == State.NOTE_PASSED ? startIntake() : stopIntake();
+  }
+
+  @Log.NT
+  public Double getDistance() {
+    return sensor.getRange();
   }
 
   @Override

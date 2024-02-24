@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
+import static monologue.Annotations.*;
 
 import com.playingwithfusion.TimeOfFlight;
 import com.revrobotics.CANSparkLowLevel;
@@ -16,13 +17,17 @@ import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
+import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
 import frc.robot.inputs.PoseEstimator;
 import lombok.Getter;
+import monologue.Annotations;
+import monologue.Logged;
 
-public class Hood extends SubsystemBase {
+public class Hood extends SubsystemBase implements Logged {
   private static final int LEAD_ANGLE_MOTOR_ID = 11;
   private static final int FOLLOW_ANGLE_MOTOR_ID = 12;
   private static final double kV = 0; // TODO: Sysid
@@ -43,7 +48,7 @@ public class Hood extends SubsystemBase {
   private final TimeOfFlight sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
-  @Getter private State state;
+  @Log.NT @Getter private State state;
 
   // private final Rev2mDistanceSensor sensor;
 
@@ -93,7 +98,10 @@ public class Hood extends SubsystemBase {
         .getEncoder()
         .setPositionConversionFactor(42.0); // Causes encoder to output in ticks, not rotations
     followAngleMotor.getEncoder().setPositionConversionFactor(42.0);
+
   }
+
+
 
   public boolean isApproaching() {
     return this.getState() == State.APPROACHING;
@@ -113,6 +121,11 @@ public class Hood extends SubsystemBase {
 
   public Command fire() {
     return runOnce(() -> state = State.APPROACHING);
+  }
+
+  @Log.NT
+  public double getDistance() {
+    return sensor.getRange();
   }
 
   @Override
@@ -144,6 +157,7 @@ public class Hood extends SubsystemBase {
     loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
     leadAngleMotor.set(
         loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
+
   }
 
   private enum State {
