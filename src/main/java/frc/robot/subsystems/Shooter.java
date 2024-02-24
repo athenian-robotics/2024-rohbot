@@ -5,8 +5,6 @@ import static edu.wpi.first.units.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.revrobotics.CANSparkLowLevel;
-import com.revrobotics.CANSparkMax;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -20,11 +18,8 @@ import lombok.Getter;
 import monologue.Annotations.Log;
 
 public class Shooter extends SubsystemBase {
-  // TODO: fill in values
-  private static final int LEFT_DRIVE_ID = 0;
-  private static final int RIGHT_DRIVE_ID = 0;
-  private static final int LEAD_TRIGGER_ID = 0;
-  private static final int FOLLOW_TRIGGER_ID = 0;
+  private static final int LEFT_DRIVE_ID = 2;
+  private static final int RIGHT_DRIVE_ID = 6;
   private static final Measure<Voltage> kS = Volts.of(.01);
   private static final Measure<Per<Voltage, Velocity<Angle>>> kV = VoltsPerRadianPerSecond.of(.087);
   private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA =
@@ -37,11 +32,8 @@ public class Shooter extends SubsystemBase {
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
 
   private final PoseEstimator poseEstimator;
-  private final TalonFX driveL =
-      new TalonFX(LEFT_DRIVE_ID, "rio"); // TODO: Make sure the canbus is right.
+  private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "rio");
   private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "rio");
-  private final CANSparkMax leadTrigger =
-      new CANSparkMax(LEAD_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
@@ -52,10 +44,6 @@ public class Shooter extends SubsystemBase {
   @Getter @Log.NT private State state = State.IDLE;
 
   public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
-
-    CANSparkMax followTrigger =
-        new CANSparkMax(FOLLOW_TRIGGER_ID, CANSparkLowLevel.MotorType.kBrushless);
-    followTrigger.follow(leadTrigger);
 
     this.table = table;
 
@@ -165,7 +153,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public Command fire() {
-    return runOnce(() -> state = State.FIRING);
+    return runOnce(() -> state = State.IDLE);
   }
 
   @Override
@@ -181,15 +169,15 @@ public class Shooter extends SubsystemBase {
         // log values
         break;
       case READY:
+        if (!atSetpoint()) {
+          state = State.APPROACHING;
+        }
         break;
       case APPROACHING:
         // send limelight data to data table, send result to system
         ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
         sysL.set(spec.speedL().in(RotationsPerSecond));
         sysR.set(spec.speedR().in(RotationsPerSecond));
-        break;
-      case FIRING:
-        leadTrigger.set(0.5); // TODO: Tune
         break;
       case SYSID:
         break;
@@ -205,6 +193,5 @@ public class Shooter extends SubsystemBase {
     APPROACHING, // approaching setpoint
     TESTING, // for collecting shooter data table values
     SYSID, // for system identification
-    FIRING,
   }
 }

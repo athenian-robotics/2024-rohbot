@@ -8,16 +8,17 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
-import frc.robot.subsystems.Indexer;
+import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
+import lombok.Getter;
 
 public class Superstructure extends SubsystemBase {
-  private final Intake intake;
-  private final Indexer indexer;
-  private final Shooter shooter;
-  private final Swerve swerve;
+  @Getter private final Intake intake;
+  @Getter private final Hood hood;
+  @Getter private final Shooter shooter;
+  @Getter private final Swerve swerve;
 
   private final PathPlannerPath leftTopToNoteToAmpTraj =
       PathPlannerPath.fromChoreoTrajectory("leftTopToAmp");
@@ -69,13 +70,13 @@ public class Superstructure extends SubsystemBase {
 
   public Superstructure(
       Intake intake,
-      Indexer indexer,
+      Hood hood,
       Shooter shooter,
       Swerve swerve,
       NoteDetector noteDetector,
       PoseEstimator poseEstimator) {
     this.intake = intake;
-    this.indexer = indexer;
+    this.hood = hood;
     this.shooter = shooter;
     this.swerve = swerve;
   }
@@ -83,7 +84,7 @@ public class Superstructure extends SubsystemBase {
   @Override
   public void periodic() {
     ParallelCommandGroup toDo = new ParallelCommandGroup();
-    if (indexer.isInactive() && intake.isNotePassed()) { // fired note
+    if (hood.isInactive() && intake.isNotePassed()) { // fired note
       toDo.addCommands(intake.startIntake());
     }
 
@@ -94,9 +95,9 @@ public class Superstructure extends SubsystemBase {
     return shooter
         .requestShot()
         .alongWith(swerve.faceSpeaker())
-        .alongWith(indexer.fire())
-        .andThen(
-            shooter.waitUntilReady().alongWith(indexer.waitUntilReady()).andThen(shooter.fire()));
+        .alongWith(hood.fire())
+        .andThen(hood.waitUntilFired())
+        .andThen(shooter.fire());
   }
 
   public Command fromTopWithAmp() {

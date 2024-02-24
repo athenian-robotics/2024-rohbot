@@ -45,6 +45,14 @@ public class Intake extends SubsystemBase {
     return runOnce(() -> state = State.NO_NOTE);
   }
 
+  public Command stopIntake() {
+    return runOnce(() -> state = State.NOTE_PASSED);
+  }
+
+  public Command toggleIntake() {
+    return state == State.NOTE_PASSED ? startIntake() : stopIntake();
+  }
+
   @Override
   public void periodic() {
     switch (state) {

@@ -1,7 +1,6 @@
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Millimeters;
+import static edu.wpi.first.units.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 
 import com.playingwithfusion.TimeOfFlight;
@@ -23,9 +22,9 @@ import frc.robot.ShooterDataTable;
 import frc.robot.inputs.PoseEstimator;
 import lombok.Getter;
 
-public class Indexer extends SubsystemBase {
-  private static final int LEAD_ANGLE_MOTOR_ID = 11; // TODO: port
-  private static final int FOLLOW_ANGLE_MOTOR_ID = 12; // TODO: number
+public class Hood extends SubsystemBase {
+  private static final int LEAD_ANGLE_MOTOR_ID = 11;
+  private static final int FOLLOW_ANGLE_MOTOR_ID = 12;
   private static final double kV = 0; // TODO: Sysid
   private static final double kA = 0; // TODO: sysid
   private static final double kS = 0;
@@ -34,8 +33,7 @@ public class Indexer extends SubsystemBase {
   private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = null;
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_STANDARD_DEVIATION = null;
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE = null;
-  private static final Measure<Angle> TICKS_TO_ANGLE =
-      Degrees.of(0); // TODO: adjust for this year's robot
+  private static final Measure<Angle> TICKS_TO_ANGLE = Rotations.of(1.0 / 10080.0);
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
@@ -49,7 +47,7 @@ public class Indexer extends SubsystemBase {
 
   // private final Rev2mDistanceSensor sensor;
 
-  public Indexer(ShooterDataTable table, final PoseEstimator poseEstimator) {
+  public Hood(ShooterDataTable table, final PoseEstimator poseEstimator) {
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     CANSparkMax followAngleMotor =
         new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
@@ -88,6 +86,13 @@ public class Indexer extends SubsystemBase {
             ROBOT_TIME_STEP.in(Units.Seconds));
 
     this.poseEstimator = poseEstimator;
+
+    leadAngleMotor.getEncoder().setPosition(0.0);
+    followAngleMotor.getEncoder().setPosition(0.0);
+    leadAngleMotor
+        .getEncoder()
+        .setPositionConversionFactor(42.0); // Causes encoder to output in ticks, not rotations
+    followAngleMotor.getEncoder().setPositionConversionFactor(42.0);
   }
 
   public boolean isApproaching() {
@@ -100,6 +105,10 @@ public class Indexer extends SubsystemBase {
 
   public Command waitUntilReady() {
     return waitUntil(() -> state == State.READY);
+  }
+
+  public Command waitUntilFired() {
+    return waitUntil(() -> state == State.IDLE);
   }
 
   public Command fire() {
@@ -117,7 +126,10 @@ public class Indexer extends SubsystemBase {
         }
       }
       case READY -> {
-        loop.setNextR(table.get(poseEstimator.translationToSpeaker()).angle().in(Units.Radians));
+        if (!(loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
+            && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond))) {
+          state = State.APPROACHING;
+        }
         if (sensor.getRange() <= SHOT_FIRED_THRESHOLD.in(Millimeters)) {
           state = State.IDLE;
         }

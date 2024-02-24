@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.controllers.Thrustmaster;
-import frc.robot.subsystems.Indexer;
+import frc.robot.subsystems.Hood;
 import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
@@ -33,6 +33,7 @@ public class RobotContainer {
   }
 
   private final Swerve drivebase;
+  private final Superstructure superstructure;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public RobotContainer() {
@@ -82,7 +83,7 @@ public class RobotContainer {
     PoseEstimator poseEstimator;
     Intake intake;
     Shooter shooter;
-    Indexer indexer;
+    Hood hood;
     NoteDetector noteDetector;
     try {
       poseEstimator =
@@ -95,9 +96,9 @@ public class RobotContainer {
       // TODO: Remember to replace with the actual camera name
       PhotonCamera photonCamera = new PhotonCamera("photonvision");
       noteDetector = new NoteDetector(photonCamera, poseEstimator);
-      //      intake = new Intake();
-      //      shooter = new Shooter(shooterDataTable, poseEstimator);
-      //      indexer = new Indexer(shooterDataTable, poseEstimator);
+      intake = new Intake();
+      shooter = new Shooter(shooterDataTable, poseEstimator);
+      hood = new Hood(shooterDataTable, poseEstimator);
 
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -105,8 +106,8 @@ public class RobotContainer {
 
     drivebase = new Swerve(swerveDrive, shooterDataTable, poseEstimator);
 
-    //    Superstructure superstructure =
-    //        new Superstructure(intake, indexer, shooter, drivebase, noteDetector, poseEstimator);
+    superstructure =
+        new Superstructure(intake, hood, shooter, drivebase, noteDetector, poseEstimator);
 
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(
@@ -125,6 +126,16 @@ public class RobotContainer {
 
   private void configureBindings() {
     rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(drivebase.resetHeading());
+    leftThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.fireShot());
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.BOTTOM)
+        .onTrue(superstructure.getIntake().toggleIntake());
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.LEFT)
+        .onTrue(superstructure.getIntake().startIntake());
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.RIGHT)
+        .onTrue(superstructure.getIntake().stopIntake());
   }
 
   public Command getAutonomousCommand() {
