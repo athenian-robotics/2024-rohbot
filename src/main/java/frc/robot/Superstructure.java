@@ -41,8 +41,6 @@ public class Superstructure extends SubsystemBase {
       PathPlannerPath.fromChoreoTrajectory("middle4ToMiddle5");
   private final PathPlannerPath middle4ToSpeaker =
       PathPlannerPath.fromChoreoTrajectory("middle4ToSpeaker");
-  private final PathPlannerPath middle5ToSpeaker =
-      PathPlannerPath.fromChoreoTrajectory("middle5ToMiddle6");
 
   private final PathPlannerPath ampToMiddle1 = PathPlannerPath.fromChoreoTrajectory("ampToMiddle1");
   private final PathPlannerPath bottomLeftToMiddle5 =
@@ -133,13 +131,11 @@ public class Superstructure extends SubsystemBase {
         checkAndHandleNote(fromMiddle1ToSpeaker(), fromMiddle1ToMiddle2(), fromSpeakerToMiddle2()),
         checkAndHandleNote(fromMiddle2ToSpeaker(), fromMiddle2ToMiddle3(), fromSpeakerToMiddle3()),
         checkAndHandleNote(fromMiddle3ToSpeaker(), fromMiddle3ToMiddle4(), fromSpeakerToMiddle4()),
-        checkAndHandleNote(fromMiddle4ToSpeaker(), fromMiddle4ToMiddle5(), fromSpeakerToMiddle5()),
-        checkAndHandleNote(fromMiddle5ToSpeaker(), null, null));
+        checkAndHandleNote(fromMiddle4ToSpeaker(), fromMiddle4ToMiddle5(), fromSpeakerToMiddle5()));
   }
 
   public Command fromMiddle5ToMiddle1() {
     return new SequentialCommandGroup(
-        checkAndHandleNote(fromMiddle5ToMiddle4(), fromMiddle5ToSpeaker(), fromSpeakerToMiddle4()),
         checkAndHandleNote(fromMiddle4ToMiddle3(), fromMiddle4ToSpeaker(), fromSpeakerToMiddle3()),
         checkAndHandleNote(fromMiddle3ToMiddle2(), fromMiddle3ToSpeaker(), fromSpeakerToMiddle2()),
         checkAndHandleNote(fromMiddle2ToMiddle1(), fromMiddle2ToSpeaker(), fromSpeakerToMiddle2()),
@@ -228,10 +224,6 @@ public class Superstructure extends SubsystemBase {
 
   private Command fromMiddle4ToSpeaker() {
     return AutoBuilder.followPath(middle4ToSpeaker);
-  }
-
-  private Command fromMiddle5ToSpeaker() {
-    return AutoBuilder.followPath(middle5ToSpeaker);
   }
 
   private Command fromMiddle5ToMiddle4() {

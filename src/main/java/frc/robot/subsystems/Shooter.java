@@ -4,7 +4,8 @@ import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.revrobotics.CANSparkLowLevel;
+import com.revrobotics.CANSparkMax;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -18,8 +19,8 @@ import lombok.Getter;
 import monologue.Annotations.Log;
 
 public class Shooter extends SubsystemBase {
-  private static final int LEFT_DRIVE_ID = 2;
-  private static final int RIGHT_DRIVE_ID = 6;
+  private static final int LEFT_DRIVE_ID = 11;
+  private static final int RIGHT_DRIVE_ID = 12;
   private static final Measure<Voltage> kS = Volts.of(.01);
   private static final Measure<Per<Voltage, Velocity<Angle>>> kV = VoltsPerRadianPerSecond.of(.087);
   private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA =
@@ -32,8 +33,10 @@ public class Shooter extends SubsystemBase {
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
 
   private final PoseEstimator poseEstimator;
-  private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "rio");
-  private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "rio");
+  private final CANSparkMax driveL =
+      new CANSparkMax(LEFT_DRIVE_ID, CANSparkLowLevel.MotorType.kBrushless);
+  private final CANSparkMax driveR =
+      new CANSparkMax(RIGHT_DRIVE_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
@@ -88,28 +91,24 @@ public class Shooter extends SubsystemBase {
 
   private void logR(SysIdRoutineLog log) {
     log.motor("right-flywheel-motor")
-        .voltage(
-            appliedVoltage.mut_replace(driveL.getSupplyVoltage().getValue() * driveL.get(), Volts))
-        .angularVelocity(
-            velocity.mut_replace(driveL.getVelocity().getValue(), Rotations.per(Second)));
+        .voltage(appliedVoltage.mut_replace(driveL.getBusVoltage() * driveL.get(), Volts))
+        .angularVelocity(velocity.mut_replace(driveL.getBusVoltage(), Rotations.per(Second)));
   }
 
   private void logL(SysIdRoutineLog log) {
     log.motor("left-flywheel-motor")
-        .voltage(
-            appliedVoltage.mut_replace(driveR.getSupplyVoltage().getValue() * driveR.get(), Volts))
-        .angularVelocity(
-            velocity.mut_replace(driveR.getVelocity().getValue(), Rotations.per(Second)));
+        .voltage(appliedVoltage.mut_replace(driveR.getBusVoltage() * driveR.get(), Volts))
+        .angularVelocity(velocity.mut_replace(driveR.getBusVoltage(), Rotations.per(Second)));
   }
 
   @Log.NT
   private Measure<Velocity<Angle>> getWheelSpeedL() {
-    return Units.RotationsPerSecond.of(driveL.getVelocity().getValue());
+    return Units.RotationsPerSecond.of(driveL.getEncoder().getVelocity());
   }
 
   @Log.NT
   private Measure<Velocity<Angle>> getWheelSpeedR() {
-    return Units.RotationsPerSecond.of(driveR.getVelocity().getValue());
+    return Units.RotationsPerSecond.of(driveR.getEncoder().getVelocity());
   }
 
   private boolean atSetpoint() {

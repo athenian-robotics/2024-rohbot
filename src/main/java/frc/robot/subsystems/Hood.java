@@ -17,27 +17,26 @@ import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
-import edu.wpi.first.wpilibj.smartdashboard.SendableBuilderImpl;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
 import frc.robot.inputs.PoseEstimator;
 import lombok.Getter;
-import monologue.Annotations;
 import monologue.Logged;
 
 public class Hood extends SubsystemBase implements Logged {
-  private static final int LEAD_ANGLE_MOTOR_ID = 11;
-  private static final int FOLLOW_ANGLE_MOTOR_ID = 12;
-  private static final double kV = 0; // TODO: Sysid
-  private static final double kA = 0; // TODO: sysid
+  private static final int LEAD_ANGLE_MOTOR_ID = 13;
+  private static final int FOLLOW_ANGLE_MOTOR_ID = 14;
+  private static final double kV = 4.68; // TODO: Sysid
+  private static final double kA = 0.01; // TODO: sysid
   private static final double kS = 0;
-  private static final double kG = 0;
-  private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = null;
-  private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = null;
-  private static final Measure<Velocity<Angle>> ANGLE_SPEED_STANDARD_DEVIATION = null;
-  private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE = null;
+  private static final double kG = 0.14;
+  private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = Degrees.of(1);
+  private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = Degrees.of(2);
+  private static final Measure<Velocity<Angle>> ANGLE_SPEED_STANDARD_DEVIATION =
+      Degrees.of(1).per(Seconds);
+  private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE =
+      Degrees.of(5).per(Seconds);
   private static final Measure<Angle> TICKS_TO_ANGLE = Rotations.of(1.0 / 10080.0);
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
@@ -48,7 +47,7 @@ public class Hood extends SubsystemBase implements Logged {
   private final TimeOfFlight sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
-  @Log.NT @Getter private State state;
+  @Log.NT @Getter private State state = State.IDLE;
 
   // private final Rev2mDistanceSensor sensor;
 
@@ -56,9 +55,9 @@ public class Hood extends SubsystemBase implements Logged {
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     CANSparkMax followAngleMotor =
         new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    followAngleMotor.follow(leadAngleMotor);
+    followAngleMotor.follow(leadAngleMotor, true);
     this.table = table;
-    sensor = new TimeOfFlight(0); // TODO: Fill with the right sensor id
+    sensor = new TimeOfFlight(16);
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
@@ -98,10 +97,7 @@ public class Hood extends SubsystemBase implements Logged {
         .getEncoder()
         .setPositionConversionFactor(42.0); // Causes encoder to output in ticks, not rotations
     followAngleMotor.getEncoder().setPositionConversionFactor(42.0);
-
   }
-
-
 
   public boolean isApproaching() {
     return this.getState() == State.APPROACHING;
@@ -148,7 +144,7 @@ public class Hood extends SubsystemBase implements Logged {
         }
       }
       case IDLE -> {
-        loop.setNextR(IDLE_ANGLE.in(Units.Radians));
+        loop.setNextR(IDLE_ANGLE.in(Units.Radians), 0);
       }
     }
     loop.correct(
@@ -157,7 +153,6 @@ public class Hood extends SubsystemBase implements Logged {
     loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
     leadAngleMotor.set(
         loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
-
   }
 
   private enum State {

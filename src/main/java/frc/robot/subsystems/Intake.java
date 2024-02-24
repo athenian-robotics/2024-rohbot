@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import static monologue.Annotations.*;
+
 import com.playingwithfusion.TimeOfFlight;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
@@ -10,8 +12,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import lombok.Getter;
 import monologue.Logged;
-
-import static monologue.Annotations.*;
 
 public class Intake extends SubsystemBase implements Logged {
   private static final int LEAD_MOTOR_ID = 9; // TODO: Fill out value
@@ -28,7 +28,7 @@ public class Intake extends SubsystemBase implements Logged {
     CANSparkMax followMotor =
         new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followMotor.follow(leadMotor);
-    sensor = new TimeOfFlight(0); // TODO: Fill in the sensor id
+    sensor = new TimeOfFlight(15);
     state = State.NO_NOTE;
   }
 

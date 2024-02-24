@@ -5,6 +5,7 @@ import io.github.jdiemke.triangulation.NotEnoughPointsException;
 import io.github.jdiemke.triangulation.Triangle2D;
 import io.github.jdiemke.triangulation.Vector2D;
 import java.util.List;
+import java.util.Optional;
 
 public class BarycentricInterpolation {
   private final DelaunayTriangulator triangulator;
@@ -37,11 +38,17 @@ public class BarycentricInterpolation {
   public double interpolate(double xVal, double yVal) {
     System.out.println(triangulator.getTriangles());
     var triangles = triangulator.getTriangles();
-    Triangle2D containingTriangle =
+    Optional<Triangle2D> optionalContainingTriangle =
         triangles.stream()
             .filter(triangle -> contains(triangle, new Vector2D(xVal, yVal)))
-            .findFirst()
-            .orElseThrow();
+            .findFirst();
+
+    if (optionalContainingTriangle.isEmpty()) {
+      System.out.println("outside of range!");
+      return 0;
+    }
+
+    var containingTriangle = optionalContainingTriangle.get();
 
     Vector2D p1 = containingTriangle.a;
     Vector2D p2 = containingTriangle.b;
