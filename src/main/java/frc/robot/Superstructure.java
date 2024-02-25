@@ -5,7 +5,6 @@ import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
@@ -128,7 +127,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command fromStartingMiddleWithoutAmp() {
-    return new SequentialCommandGroup(
+    return sequence(
         fromStartingMiddleToMiddle3(),
         checkAndHandleNote(fromMiddle3ToSpeaker(), fromMiddle3ToMiddle2(), fromSpeakerToMiddle2()),
         checkAndHandleNote(
@@ -137,7 +136,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command fromMiddle1ToMiddle5() {
-    return new SequentialCommandGroup(
+    return sequence(
         checkAndHandleNote(fromMiddle1ToSpeaker(), fromMiddle1ToMiddle2(), fromSpeakerToMiddle2()),
         checkAndHandleNote(fromMiddle2ToSpeaker(), fromMiddle2ToMiddle3(), fromSpeakerToMiddle3()),
         checkAndHandleNote(fromMiddle3ToSpeaker(), fromMiddle3ToMiddle4(), fromSpeakerToMiddle4()),
@@ -145,7 +144,7 @@ public class Superstructure extends SubsystemBase {
   }
 
   public Command fromMiddle5ToMiddle1() {
-    return new SequentialCommandGroup(
+    return sequence(
         checkAndHandleNote(fromMiddle4ToMiddle3(), fromMiddle4ToSpeaker(), fromSpeakerToMiddle3()),
         checkAndHandleNote(fromMiddle3ToMiddle2(), fromMiddle3ToSpeaker(), fromSpeakerToMiddle2()),
         checkAndHandleNote(fromMiddle2ToMiddle1(), fromMiddle2ToSpeaker(), fromSpeakerToMiddle2()),
