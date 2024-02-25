@@ -33,6 +33,8 @@ public class Shooter extends SubsystemBase {
       1 / 42.0; // 1 tick of built-in neo encoder with reduction
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
   private static final double EMPTY_THRESHOLD = 290;
+  private static final int CURRENT_LIMIT = 20;
+  private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
 
   private final PoseEstimator poseEstimator;
   private final CANSparkMax driveL =
@@ -95,6 +97,9 @@ public class Shooter extends SubsystemBase {
                 this::logR,
                 this,
                 "right flywheel motor"));
+
+    driveL.setSmartCurrentLimit(CURRENT_LIMIT);
+    driveR.setSmartCurrentLimit(CURRENT_LIMIT);
     this.poseEstimator = poseEstimator;
   }
 
@@ -152,7 +157,7 @@ public class Shooter extends SubsystemBase {
   public void periodic() {
     switch (state) {
       case APPROACHING -> {
-        if (power.hasCurrent(driveL.getOutputCurrent() + driveR.getOutputCurrent(), 70)) {
+        if (power.hasCurrent(driveL.getOutputCurrent() + driveR.getOutputCurrent(), TOTAL_CURRENT_LIMIT)) {
           sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
           sysR.update(getWheelSpeedR().in(RadiansPerSecond));
 

@@ -41,6 +41,9 @@ public class Hood extends SubsystemBase implements Logged {
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
   private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
+  private static final int CURRENT_LIMIT = 15;
+  private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
+
   private final PoseEstimator poseEstimator;
   private final CANSparkMax leadAngleMotor;
   private final TimeOfFlight sensor;
@@ -63,9 +66,11 @@ public class Hood extends SubsystemBase implements Logged {
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     leadAngleMotor.restoreFactoryDefaults();
     leadAngleMotor.setInverted(true);
+    leadAngleMotor.setSmartCurrentLimit(CURRENT_LIMIT);
     followAngleMotor =
         new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followAngleMotor.restoreFactoryDefaults();
+    followAngleMotor.setSmartCurrentLimit(CURRENT_LIMIT);
     followAngleMotor.follow(leadAngleMotor, true);
     this.table = table;
 
@@ -127,7 +132,7 @@ public class Hood extends SubsystemBase implements Logged {
     }
 
     if (power.hasCurrent(
-        leadAngleMotor.getOutputCurrent() + followAngleMotor.getOutputCurrent(), 30)) {
+        leadAngleMotor.getOutputCurrent() + followAngleMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)) {
       loop.correct(
           VecBuilder.fill(
               leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));

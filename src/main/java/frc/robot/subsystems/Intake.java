@@ -14,6 +14,7 @@ public class Intake extends SubsystemBase implements Logged {
   private static final int FOLLOW_MOTOR_ID = 10;
   private static final double EMPTY_THRESHOLD = 680;
   private static final double HAS_NOTE_THRESHOLD = 375;
+  private static final int CURRENT_LIMIT = 10;
   private final CANSparkMax leadMotor;
   private final TimeOfFlight sensor;
 
@@ -22,6 +23,8 @@ public class Intake extends SubsystemBase implements Logged {
     CANSparkMax followMotor =
         new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followMotor.follow(leadMotor);
+    leadMotor.setSmartCurrentLimit(CURRENT_LIMIT);
+    followMotor.setSmartCurrentLimit(CURRENT_LIMIT);
     sensor = new TimeOfFlight(16);
     sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
   }
