@@ -86,6 +86,8 @@ public class Superstructure extends SubsystemBase {
     this.dataTable = dataTable;
   }
 
+  // TODO: test whether we can actually move notes from the intake to the hood while the hood is
+  // angled
   @Override
   public void periodic() {
     switch (state) {
@@ -96,11 +98,14 @@ public class Superstructure extends SubsystemBase {
         }
 
         intake.on();
-        hood.flat();
+        switch (rangeStatus) { // if we know what the hood angle should be, adjust
+          case IN_RANGE -> hood.adjusting();
+          case OUTSIDE_RANGE -> hood.idle();
+        }
       }
 
       case HAS_NOTE -> {
-        intake.off();
+        intake.off(); // hold note in intake
         switch (rangeStatus) {
           case IN_RANGE -> hood.adjusting();
           case OUTSIDE_RANGE -> hood.idle();
@@ -111,14 +116,16 @@ public class Superstructure extends SubsystemBase {
         switch (rangeStatus) {
           case IN_RANGE -> {
             swerve.faceSpeaker();
-            if (shooter.ready() && hood.ready()) intake.on();
+            if (shooter.ready() && hood.ready())
+              intake.on(); // run intake so note goes into hood/shooter/indexer/shootdexer
           }
 
           case OUTSIDE_RANGE -> {
-            // log?
+            // log?, should never happen
           }
         }
-        if (intake.empty() && shooter.empty()) state = State.NO_NOTE;
+        if (intake.empty() && shooter.empty())
+          state = State.NO_NOTE; // when we are done shooting reset state
       }
     }
 
