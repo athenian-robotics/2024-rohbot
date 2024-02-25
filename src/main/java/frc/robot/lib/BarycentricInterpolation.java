@@ -31,11 +31,11 @@ public class BarycentricInterpolation {
 
     BarycentricInterpolation interpolator = new BarycentricInterpolation(xValues, yValues, zValues);
 
-    double result = interpolator.interpolate(0, 0);
-    System.out.println("Interpolated value: " + result);
+    Optional<Double> result = interpolator.interpolate(0, 0);
+    System.out.println("Interpolated value: " + result.get());
   }
 
-  public double interpolate(double xVal, double yVal) {
+  public Optional<Double> interpolate(double xVal, double yVal) {
     System.out.println(triangulator.getTriangles());
     var triangles = triangulator.getTriangles();
     Optional<Triangle2D> optionalContainingTriangle =
@@ -44,8 +44,7 @@ public class BarycentricInterpolation {
             .findFirst();
 
     if (optionalContainingTriangle.isEmpty()) {
-      System.out.println("outside of range!");
-      return 0;
+      return Optional.empty();
     }
 
     var containingTriangle = optionalContainingTriangle.get();
@@ -61,9 +60,10 @@ public class BarycentricInterpolation {
     double gamma = 1 - alpha - beta;
 
     // Interpolate z value
-    return alpha * z[triangles.indexOf(containingTriangle) * 3]
-        + beta * z[triangles.indexOf(containingTriangle) * 3 + 1]
-        + gamma * z[triangles.indexOf(containingTriangle) * 3 + 2];
+    return Optional.of(
+        alpha * z[triangles.indexOf(containingTriangle) * 3]
+            + beta * z[triangles.indexOf(containingTriangle) * 3 + 1]
+            + gamma * z[triangles.indexOf(containingTriangle) * 3 + 2]);
   }
 
   private boolean contains(Triangle2D triangle, Vector2D vector2D) {

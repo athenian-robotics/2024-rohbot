@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Degrees;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
@@ -14,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
+import frc.robot.ShooterSpec;
 import frc.robot.inputs.PoseEstimator;
 import java.util.function.DoubleSupplier;
 import lombok.Getter;
@@ -100,7 +103,12 @@ public class Swerve extends SubsystemBase {
             poseEstimator
                 .translationToSpeaker()
                 .getAngle()
-                .plus(new Rotation2d(table.get(poseEstimator.translationToSpeaker()).offset()))),
+                .plus(
+                    new Rotation2d(
+                        table
+                            .get(poseEstimator.translationToSpeaker())
+                            .map(ShooterSpec::offset)
+                            .orElse(Degrees.of(0))))),
         new PathConstraints(
             swerveDrive.getMaximumVelocity(),
             MAXIMUM_ACCELERATION.in(Units.MetersPerSecondPerSecond),

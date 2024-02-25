@@ -19,6 +19,7 @@ import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
+import frc.robot.ShooterSpec;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.TunableNumber;
 import lombok.Getter;
@@ -40,9 +41,10 @@ public class Hood extends SubsystemBase implements Logged {
   private static final Measure<Angle> TICKS_TO_ANGLE = Rotations.of(1.0 / 10080.0);
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
-  private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
+  private static final Measure<Angle> FLAT_ANGLE = Degrees.of(10);
   private static final int CURRENT_LIMIT = 15;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
+  private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
 
   private final PoseEstimator poseEstimator;
   private final CANSparkMax leadAngleMotor;
@@ -125,14 +127,21 @@ public class Hood extends SubsystemBase implements Logged {
   @Override
   public void periodic() {
     switch (state) {
-      case FLAT -> loop.setNextR(IDLE_ANGLE.in(Radians), 0);
+      case FLAT -> loop.setNextR(FLAT_ANGLE.in(Radians), 0);
       case ADJUSTING -> loop.setNextR(
-          table.get(poseEstimator.translationToSpeaker()).angle().in(Units.Radians), 0);
+          table
+              .get(poseEstimator.translationToSpeaker())
+              .map(ShooterSpec::angle)
+              .orElse(Degrees.of(0))
+              .in(Units.Radians),
+          0);
       case TESTING -> loop.setNextR(Degrees.of(angle.get()).in(Radians), 0);
+      case IDLE -> loop.setNextR(IDLE_ANGLE.in(Radians), 0);
     }
 
     if (power.hasCurrent(
-        leadAngleMotor.getOutputCurrent() + followAngleMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)) {
+        leadAngleMotor.getOutputCurrent() + followAngleMotor.getOutputCurrent(),
+        TOTAL_CURRENT_LIMIT)) {
       loop.correct(
           VecBuilder.fill(
               leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
@@ -160,9 +169,14 @@ public class Hood extends SubsystemBase implements Logged {
         && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond);
   }
 
+  public void idle() {
+    state = State.IDLE;
+  }
+
   private enum State {
     FLAT,
     ADJUSTING,
+    IDLE,
     TESTING
   }
 }

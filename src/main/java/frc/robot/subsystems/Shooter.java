@@ -16,6 +16,7 @@ import frc.robot.ShooterSpec;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.SimpleVelocitySystem;
 import frc.robot.lib.TunableNumber;
+import java.util.Optional;
 import lombok.Getter;
 import monologue.Annotations.Log;
 
@@ -157,14 +158,17 @@ public class Shooter extends SubsystemBase {
   public void periodic() {
     switch (state) {
       case APPROACHING -> {
-        if (power.hasCurrent(driveL.getOutputCurrent() + driveR.getOutputCurrent(), TOTAL_CURRENT_LIMIT)) {
+        if (power.hasCurrent(
+            driveL.getOutputCurrent() + driveR.getOutputCurrent(), TOTAL_CURRENT_LIMIT)) {
           sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
           sysR.update(getWheelSpeedR().in(RadiansPerSecond));
 
-          ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
+          Optional<ShooterSpec> spec = table.get(poseEstimator.translationToSpeaker());
 
-          sysL.set(spec.speedL().in(RadiansPerSecond));
-          sysR.set(spec.speedR().in(RadiansPerSecond));
+          sysL.set(
+              spec.map(ShooterSpec::speedL).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
+          sysR.set(
+              spec.map(ShooterSpec::speedR).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
 
           driveL.set(sysL.getOutput());
           driveR.set(sysR.getOutput());

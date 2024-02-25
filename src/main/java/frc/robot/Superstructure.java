@@ -19,6 +19,8 @@ public class Superstructure extends SubsystemBase {
   @Getter private final Hood hood;
   @Getter private final Shooter shooter;
   @Getter private final Swerve swerve;
+  private final PoseEstimator poseEstimator;
+  private final ShooterDataTable dataTable;
 
   private final PathPlannerPath leftTopToNoteToAmpTraj =
       PathPlannerPath.fromChoreoTrajectory("leftTopToAmp");
@@ -66,6 +68,7 @@ public class Superstructure extends SubsystemBase {
   private final PathPlannerPath fromStartingMiddleToMiddle3 =
       PathPlannerPath.fromChoreoTrajectory("fromStartingMiddleToMiddle3");
   private State state = State.NO_NOTE;
+  private State.RangeStatus rangeStatus = State.RangeStatus.OUTSIDE_RANGE;
 
   public Superstructure(
       Intake intake,
@@ -73,11 +76,14 @@ public class Superstructure extends SubsystemBase {
       Shooter shooter,
       Swerve swerve,
       NoteDetector noteDetector,
-      PoseEstimator poseEstimator) {
+      PoseEstimator poseEstimator,
+      ShooterDataTable dataTable) {
     this.intake = intake;
     this.hood = hood;
     this.shooter = shooter;
     this.swerve = swerve;
+    this.poseEstimator = poseEstimator;
+    this.dataTable = dataTable;
   }
 
   @Override
@@ -95,23 +101,44 @@ public class Superstructure extends SubsystemBase {
 
       case HAS_NOTE -> {
         intake.off();
-        hood.adjusting();
+        switch (rangeStatus) {
+          case IN_RANGE -> hood.adjusting();
+          case OUTSIDE_RANGE -> hood.idle();
+        }
       }
 
       case SHO0TING -> {
-        if (shooter.ready() && hood.ready()) {
-          intake.on();
-        }
+        switch (rangeStatus) {
+          case IN_RANGE -> {
+            swerve.faceSpeaker();
+            if (shooter.ready() && hood.ready()) intake.on();
+          }
 
-        if (intake.empty() && shooter.empty()) {
-          state = State.NO_NOTE;
+          case OUTSIDE_RANGE -> {
+            // log?
+          }
         }
+        if (intake.empty() && shooter.empty()) state = State.NO_NOTE;
       }
     }
+
+    rangeStatus =
+        dataTable.get(poseEstimator.translationToSpeaker()).isPresent()
+            ? State.RangeStatus.IN_RANGE
+            : State.RangeStatus.OUTSIDE_RANGE;
   }
 
   public Command shoot() {
-    return runOnce(() -> state = State.SHO0TING).onlyIf(intake::hasNote);
+    return runOnce(() -> state = State.SHO0TING)
+        .onlyIf(intake::hasNote)
+        .onlyIf(() -> rangeStatus == State.RangeStatus.IN_RANGE);
+  }
+
+  public Command cancelShot() {
+    return runOnce(
+        intake.empty() && shooter.empty()
+            ? () -> state = State.NO_NOTE
+            : () -> state = State.HAS_NOTE);
   }
 
   public Command fromTopWithAmp() {
@@ -275,6 +302,11 @@ public class Superstructure extends SubsystemBase {
   private enum State {
     NO_NOTE,
     HAS_NOTE,
-    SHO0TING,
+    SHO0TING;
+
+    private enum RangeStatus {
+      IN_RANGE,
+      OUTSIDE_RANGE
+    }
   }
 }

@@ -34,7 +34,7 @@ public class RobotContainer {
   private final Superstructure superstructure;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
-    public RobotContainer() {
+  public RobotContainer() {
     // Angle conversion factor = 360 / (GEAR RATIO * ENCODER RESOLUTION)
     double angleConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(12.8, 4096);
     // with real values
@@ -98,8 +98,8 @@ public class RobotContainer {
       TimeOfFlight sensor = new TimeOfFlight(15);
       sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
 
-        PowerBudget power = new PowerBudget();
-        shooter = new Shooter(shooterDataTable, poseEstimator, sensor, power);
+      PowerBudget power = new PowerBudget();
+      shooter = new Shooter(shooterDataTable, poseEstimator, sensor, power);
       hood = new Hood(shooterDataTable, poseEstimator, sensor, power);
 
     } catch (IOException e) {
@@ -109,7 +109,8 @@ public class RobotContainer {
     drivebase = new Swerve(swerveDrive, shooterDataTable, poseEstimator);
 
     superstructure =
-        new Superstructure(intake, hood, shooter, drivebase, noteDetector, poseEstimator);
+        new Superstructure(
+            intake, hood, shooter, drivebase, noteDetector, poseEstimator, shooterDataTable);
 
     Command driveFieldOrientedDirectAngle =
         drivebase.driveCommand(
