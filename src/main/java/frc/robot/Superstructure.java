@@ -1,9 +1,10 @@
 package frc.robot;
 
+import static edu.wpi.first.wpilibj2.command.Commands.sequence;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.inputs.NoteDetector;
@@ -65,6 +66,7 @@ public class Superstructure extends SubsystemBase {
 
   private final PathPlannerPath fromStartingMiddleToMiddle3 =
       PathPlannerPath.fromChoreoTrajectory("fromStartingMiddleToMiddle3");
+  private State state = State.NO_NOTE;
 
   public Superstructure(
       Intake intake,
@@ -81,44 +83,52 @@ public class Superstructure extends SubsystemBase {
 
   @Override
   public void periodic() {
-    ParallelCommandGroup toDo = new ParallelCommandGroup();
-    if (hood.isInactive() && intake.isNotePassed()) { // fired note
-      toDo.addCommands(intake.startIntake());
-    }
+    switch (state) {
+      case NO_NOTE -> {
+        if (intake.hasNote()) {
+          state = State.HAS_NOTE;
+          break;
+        }
 
-    toDo.schedule();
+        intake.on();
+        hood.flat();
+      }
+
+      case HAS_NOTE -> {
+        intake.off();
+        hood.adjusting();
+      }
+
+      case SHO0TING -> {
+        if (shooter.ready() && hood.ready()) {
+          intake.on();
+        }
+
+        if (intake.empty() && shooter.empty()) {
+          state = State.NO_NOTE;
+        }
+      }
+    }
   }
 
-  public Command fireShot() {
-    return shooter
-        .requestShot()
-        .alongWith(swerve.faceSpeaker())
-        .alongWith(hood.fire())
-        .andThen(hood.waitUntilFired())
-        .andThen(shooter.requestShot());
+  public Command shoot() {
+    return runOnce(() -> state = State.SHO0TING).onlyIf(intake::hasNote);
   }
 
   public Command fromTopWithAmp() {
-    return new SequentialCommandGroup(
-        intake.startIntake(),
-        fromLeftTopToNoteToAmp(),
-        fireShot(),
-        intake.startIntake(),
-        fromAmpToMiddle1(),
-        fromMiddle1ToMiddle5());
+    return sequence(fromLeftTopToNoteToAmp(), shoot(), fromAmpToMiddle1(), fromMiddle1ToMiddle5());
   }
 
   public Command fromTopWithoutAmp() {
-    return intake.startIntake().andThen(fromTopToMiddle1()).andThen(fromMiddle1ToMiddle5());
+    return fromTopToMiddle1().andThen(fromMiddle1ToMiddle5());
   }
 
   public Command fromBottomWithoutAmp() {
-    return intake.startIntake().andThen(fromBottomToMiddle5()).andThen(fromMiddle5ToMiddle1());
+    return fromBottomToMiddle5().andThen(fromMiddle5ToMiddle1());
   }
 
   public Command fromStartingMiddleWithoutAmp() {
     return new SequentialCommandGroup(
-        intake.startIntake(),
         fromStartingMiddleToMiddle3(),
         checkAndHandleNote(fromMiddle3ToSpeaker(), fromMiddle3ToMiddle2(), fromSpeakerToMiddle2()),
         checkAndHandleNote(
@@ -146,16 +156,17 @@ public class Superstructure extends SubsystemBase {
       Command toSpeaker, Command toNextNoteDirectly, Command fromSpeakerToNextNote) {
     return defer(
         () -> {
-          if (intake.isNoteFound()) {
-            return new SequentialCommandGroup(
+          // No next action if at the last note and no note is present
+          if (intake.hasNote()) {
+            return sequence(
                 // onTheFlyRobotToNote(),
-                toSpeaker, fireShot(), intake.startIntake(), fromSpeakerToNextNote);
-          } else if (toNextNoteDirectly != null) {
-            return new SequentialCommandGroup(intake.startIntake(), toNextNoteDirectly);
-          } else {
-            return null; // No next action if at the last note and no note is present
-          }
+                toSpeaker, shoot(), fromSpeakerToNextNote);
+          } else return toNextNoteDirectly;
         });
+  }
+
+  private Command fromAmpToMiddle1() {
+    return AutoBuilder.followPath(ampToMiddle1);
   }
 
   // private Command onTheFlyRobotToNote() {
@@ -181,10 +192,6 @@ public class Superstructure extends SubsystemBase {
 
   // return AutoBuilder.followPath(pathToNote);
   // }
-
-  private Command fromAmpToMiddle1() {
-    return AutoBuilder.followPath(ampToMiddle1);
-  }
 
   private Command fromLeftTopToNoteToAmp() {
     return AutoBuilder.followPath(leftTopToNoteToAmpTraj);
@@ -264,5 +271,11 @@ public class Superstructure extends SubsystemBase {
 
   private Command fromStartingMiddleToMiddle3() {
     return AutoBuilder.followPath(fromStartingMiddleToMiddle3);
+  }
+
+  private enum State {
+    NO_NOTE,
+    HAS_NOTE,
+    SHO0TING,
   }
 }

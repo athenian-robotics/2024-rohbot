@@ -12,10 +12,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.controllers.Thrustmaster;
-import frc.robot.subsystems.Hood;
-import frc.robot.subsystems.Intake;
-import frc.robot.subsystems.Shooter;
-import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.*;
 import java.io.File;
 import java.io.IOException;
 import org.photonvision.PhotonCamera;
@@ -37,7 +34,7 @@ public class RobotContainer {
   private final Superstructure superstructure;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
-  public RobotContainer() {
+    public RobotContainer() {
     // Angle conversion factor = 360 / (GEAR RATIO * ENCODER RESOLUTION)
     double angleConversionFactor = SwerveMath.calculateDegreesPerSteeringRotation(12.8, 4096);
     // with real values
@@ -101,8 +98,9 @@ public class RobotContainer {
       TimeOfFlight sensor = new TimeOfFlight(15);
       sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
 
-      shooter = new Shooter(shooterDataTable, poseEstimator, sensor);
-      hood = new Hood(shooterDataTable, poseEstimator, sensor);
+        PowerBudget power = new PowerBudget();
+        shooter = new Shooter(shooterDataTable, poseEstimator, sensor, power);
+      hood = new Hood(shooterDataTable, poseEstimator, sensor, power);
 
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -130,16 +128,7 @@ public class RobotContainer {
 
   private void configureBindings() {
     rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(drivebase.resetHeading());
-    leftThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.fireShot());
-    leftThrustmaster
-        .getButton(Thrustmaster.Button.BOTTOM)
-        .onTrue(superstructure.getIntake().toggleIntake());
-    leftThrustmaster
-        .getButton(Thrustmaster.Button.LEFT)
-        .onTrue(superstructure.getIntake().startIntake());
-    leftThrustmaster
-        .getButton(Thrustmaster.Button.RIGHT)
-        .onTrue(superstructure.getIntake().stopIntake());
+    leftThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shoot());
   }
 
   public Command getAutonomousCommand() {

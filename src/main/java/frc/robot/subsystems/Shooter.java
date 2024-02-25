@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.*;
-import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 
 import com.playingwithfusion.TimeOfFlight;
 import com.revrobotics.CANSparkLowLevel;
@@ -16,6 +15,7 @@ import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.SimpleVelocitySystem;
+import frc.robot.lib.TunableNumber;
 import lombok.Getter;
 import monologue.Annotations.Log;
 
@@ -32,6 +32,7 @@ public class Shooter extends SubsystemBase {
   private static final double ENCODER_DEVIATION =
       1 / 42.0; // 1 tick of built-in neo encoder with reduction
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
+  private static final double EMPTY_THRESHOLD = 290;
 
   private final PoseEstimator poseEstimator;
   private final CANSparkMax driveL =
@@ -46,12 +47,17 @@ public class Shooter extends SubsystemBase {
   private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Second).of(0));
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
-  @Getter @Log.NT private State state = State.LOOKING_FOR_NOTE;
+  @Getter @Log.NT private State state = State.APPROACHING;
+  private final TunableNumber numL = new TunableNumber("left shooter power", 0);
+  private final TunableNumber numR = new TunableNumber("right shooter power", 0);
+  private final PowerBudget power;
 
-  public Shooter(ShooterDataTable table, PoseEstimator poseEstimator, TimeOfFlight sensor) {
+  public Shooter(
+      ShooterDataTable table, PoseEstimator poseEstimator, TimeOfFlight sensor, PowerBudget power) {
 
     this.table = table;
     this.sensor = sensor;
+    this.power = power;
 
     sysL =
         new SimpleVelocitySystem(
@@ -114,12 +120,8 @@ public class Shooter extends SubsystemBase {
     return Units.RotationsPerSecond.of(driveR.getEncoder().getVelocity());
   }
 
-  private boolean atSetpoint() {
+  public boolean ready() {
     return Math.abs(sysL.getError()) < MAX_ERROR && Math.abs(sysR.getError()) < MAX_ERROR;
-  }
-
-  public Command waitUntilReady() {
-    return waitUntil(() -> state == State.READY);
   }
 
   public Command testing() {
@@ -146,66 +148,46 @@ public class Shooter extends SubsystemBase {
     return routineR.dynamic(direction);
   }
 
-  public Command requestShot() {
-    return runOnce(() -> state = State.APPROACHING).onlyIf(() -> state == State.NOTE_FOUND);
-  }
-
   @Override
   public void periodic() {
-    sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
-    sysR.update(getWheelSpeedR().in(RadiansPerSecond));
     switch (state) {
-      case LOOKING_FOR_NOTE:
-        if (sensor.getRange() <= 60) { // TODO: make it a constant
-          state = State.NOTE_FOUND;
-          break;
-        }
+      case APPROACHING -> {
+        if (power.hasCurrent(driveL.getOutputCurrent() + driveR.getOutputCurrent(), 70)) {
+          sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
+          sysR.update(getWheelSpeedR().in(RadiansPerSecond));
 
-        sysL.set(RotationsPerSecond.of(5).in(RadiansPerSecond));
-        sysR.set(RotationsPerSecond.of(5).in(RadiansPerSecond));
-        break;
+          ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
 
-      case NOTE_FOUND:
-        sysL.set(0);
-        sysR.set(0);
-        break;
+          sysL.set(spec.speedL().in(RadiansPerSecond));
+          sysR.set(spec.speedR().in(RadiansPerSecond));
 
-      case TESTING:
-        // log values
-        break;
-      case READY:
-        if (!atSetpoint()) {
-          state = State.APPROACHING;
+          driveL.set(sysL.getOutput());
+          driveR.set(sysR.getOutput());
         }
-        if (sensor.getRange() >= 290) { // TODO: make it a constant
-          state = State.LOOKING_FOR_NOTE;
-        }
-        break;
-      case APPROACHING:
-        // send limelight data to data table, send result to system
-        ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
-        sysL.set(spec.speedL().in(RotationsPerSecond));
-        sysR.set(spec.speedR().in(RotationsPerSecond));
-        if (sysR.getError() <= 30 && sysL.getError() <= 30) {
-          state = State.READY;
-        }
-        break;
-      case SYSID:
-        break;
+      }
+      case SYSID -> {
+        // chill
+      }
+      case TESTING -> {
+        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
+        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
+
+        sysL.set(DegreesPerSecond.of(numL.get()).in(RadiansPerSecond));
+        sysR.set(DegreesPerSecond.of(numR.get()).in(RadiansPerSecond));
+
+        driveL.set(sysL.getOutput());
+        driveR.set(sysR.getOutput());
+      }
     }
-    if (atSetpoint()) {
-      state = State.READY;
-    }
-    driveL.set(sysL.getOutput());
-    driveR.set(sysR.getOutput());
+  }
+
+  public boolean empty() {
+    return sensor.getRange() >= EMPTY_THRESHOLD;
   }
 
   private enum State {
-    READY, // at setpoint and within tolerance
-    APPROACHING, // approaching setpoint
-    TESTING, // for collecting shooter data table values
+    APPROACHING,
     SYSID,
-    LOOKING_FOR_NOTE,
-    NOTE_FOUND, // for system identification
+    TESTING
   }
 }
