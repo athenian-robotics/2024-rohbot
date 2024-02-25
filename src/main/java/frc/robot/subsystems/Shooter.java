@@ -4,6 +4,7 @@ import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.*;
 import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 
+import com.playingwithfusion.TimeOfFlight;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.units.*;
@@ -25,7 +26,7 @@ public class Shooter extends SubsystemBase {
   private static final Measure<Per<Voltage, Velocity<Angle>>> kV = VoltsPerRadianPerSecond.of(.087);
   private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA =
       VoltsPerRadianPerSecondSquared.of(0.06);
-  private static final double MAX_ERROR = 5;
+  private static final double MAX_ERROR = 1;
   private static final double MAX_CONTROL_EFFORT = 8;
   private static final double MODEL_DEVIATION = 1;
   private static final double ENCODER_DEVIATION =
@@ -40,15 +41,17 @@ public class Shooter extends SubsystemBase {
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
+  private final TimeOfFlight sensor;
   private final MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
   private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Second).of(0));
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
-  @Getter @Log.NT private State state = State.IDLE;
+  @Getter @Log.NT private State state = State.LOOKING_FOR_NOTE;
 
-  public Shooter(ShooterDataTable table, PoseEstimator poseEstimator) {
+  public Shooter(ShooterDataTable table, PoseEstimator poseEstimator, TimeOfFlight sensor) {
 
     this.table = table;
+    this.sensor = sensor;
 
     sysL =
         new SimpleVelocitySystem(
@@ -115,14 +118,6 @@ public class Shooter extends SubsystemBase {
     return Math.abs(sysL.getError()) < MAX_ERROR && Math.abs(sysR.getError()) < MAX_ERROR;
   }
 
-  public Command requestShot() {
-    return runOnce(() -> state = State.APPROACHING);
-  }
-
-  public Command idle() {
-    return runOnce(() -> state = State.IDLE);
-  }
-
   public Command waitUntilReady() {
     return waitUntil(() -> state == State.READY);
   }
@@ -151,8 +146,8 @@ public class Shooter extends SubsystemBase {
     return routineR.dynamic(direction);
   }
 
-  public Command fire() {
-    return runOnce(() -> state = State.IDLE);
+  public Command requestShot() {
+    return runOnce(() -> state = State.APPROACHING).onlyIf(() -> state == State.NOTE_FOUND);
   }
 
   @Override
@@ -160,10 +155,21 @@ public class Shooter extends SubsystemBase {
     sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
     sysR.update(getWheelSpeedR().in(RadiansPerSecond));
     switch (state) {
-      case IDLE:
-        sysL.set(0.0);
-        sysR.set(0.0);
+      case LOOKING_FOR_NOTE:
+        if (sensor.getRange() <= 60) { // TODO: make it a constant
+          state = State.NOTE_FOUND;
+          break;
+        }
+
+        sysL.set(RotationsPerSecond.of(5).in(RadiansPerSecond));
+        sysR.set(RotationsPerSecond.of(5).in(RadiansPerSecond));
         break;
+
+      case NOTE_FOUND:
+        sysL.set(0);
+        sysR.set(0);
+        break;
+
       case TESTING:
         // log values
         break;
@@ -171,12 +177,18 @@ public class Shooter extends SubsystemBase {
         if (!atSetpoint()) {
           state = State.APPROACHING;
         }
+        if (sensor.getRange() >= 290) { // TODO: make it a constant
+          state = State.LOOKING_FOR_NOTE;
+        }
         break;
       case APPROACHING:
         // send limelight data to data table, send result to system
         ShooterSpec spec = table.get(poseEstimator.translationToSpeaker());
         sysL.set(spec.speedL().in(RotationsPerSecond));
         sysR.set(spec.speedR().in(RotationsPerSecond));
+        if (sysR.getError() <= 30 && sysL.getError() <= 30) {
+          state = State.READY;
+        }
         break;
       case SYSID:
         break;
@@ -184,13 +196,16 @@ public class Shooter extends SubsystemBase {
     if (atSetpoint()) {
       state = State.READY;
     }
+    driveL.set(sysL.getOutput());
+    driveR.set(sysR.getOutput());
   }
 
   private enum State {
-    IDLE, // default state
     READY, // at setpoint and within tolerance
     APPROACHING, // approaching setpoint
     TESTING, // for collecting shooter data table values
-    SYSID, // for system identification
+    SYSID,
+    LOOKING_FOR_NOTE,
+    NOTE_FOUND, // for system identification
   }
 }

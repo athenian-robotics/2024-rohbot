@@ -5,7 +5,6 @@ import static edu.wpi.first.units.Units.RPM;
 
 import edu.wpi.first.math.geometry.Translation2d;
 import frc.robot.lib.BarycentricInterpolation;
-import io.github.jdiemke.triangulation.NotEnoughPointsException;
 
 public class ShooterDataTable {
   private final BarycentricInterpolation interpolatorAngle;
@@ -39,7 +38,7 @@ public class ShooterDataTable {
   }
 
   // testing
-  public static void main(String... args) throws NotEnoughPointsException {
+  public static void main(String... args) {
     Translation2d[] points =
         new Translation2d[] {
           new Translation2d(0, 0),

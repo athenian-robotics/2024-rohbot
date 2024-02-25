@@ -95,7 +95,7 @@ public class Superstructure extends SubsystemBase {
         .alongWith(swerve.faceSpeaker())
         .alongWith(hood.fire())
         .andThen(hood.waitUntilFired())
-        .andThen(shooter.fire());
+        .andThen(shooter.requestShot());
   }
 
   public Command fromTopWithAmp() {

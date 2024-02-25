@@ -1,5 +1,6 @@
 package frc.robot;
 
+import com.playingwithfusion.TimeOfFlight;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
@@ -97,8 +98,11 @@ public class RobotContainer {
       PhotonCamera photonCamera = new PhotonCamera("photonvision");
       noteDetector = new NoteDetector(photonCamera, poseEstimator);
       intake = new Intake();
-      shooter = new Shooter(shooterDataTable, poseEstimator);
-      hood = new Hood(shooterDataTable, poseEstimator);
+      TimeOfFlight sensor = new TimeOfFlight(15);
+      sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
+
+      shooter = new Shooter(shooterDataTable, poseEstimator, sensor);
+      hood = new Hood(shooterDataTable, poseEstimator, sensor);
 
     } catch (IOException e) {
       throw new RuntimeException(e);

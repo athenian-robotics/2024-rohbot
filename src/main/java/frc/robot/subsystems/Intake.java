@@ -8,16 +8,17 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.units.Distance;
 import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import lombok.Getter;
 import monologue.Logged;
 
 public class Intake extends SubsystemBase implements Logged {
-  private static final int LEAD_MOTOR_ID = 9; // TODO: Fill out value
-  private static final int FOLLOW_MOTOR_ID = 10; // TODO: Fill
-  private static final Measure<Distance> NOTE_FOUND_THRESHOLD = Units.Inches.of(0); // TODO: Tune
-  private static final Measure<Distance> NOTE_PASSED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
+  private static final int LEAD_MOTOR_ID = 9;
+  private static final int FOLLOW_MOTOR_ID = 10;
+  private static final Measure<Distance> NOTE_FOUND_THRESHOLD = Units.Inches.of(680); // TODO: Tune
+  private static final Measure<Distance> NOTE_PASSED_THRESHOLD = Units.Inches.of(680); // TODO: Tune
   private final CANSparkMax leadMotor;
   private final TimeOfFlight sensor;
 
@@ -28,8 +29,9 @@ public class Intake extends SubsystemBase implements Logged {
     CANSparkMax followMotor =
         new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followMotor.follow(leadMotor);
-    sensor = new TimeOfFlight(15);
-    state = State.NO_NOTE;
+    sensor = new TimeOfFlight(16);
+    sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
+    state = State.LOOKING_FOR_NOTE;
   }
 
   public boolean isNoteFound() {
@@ -37,7 +39,7 @@ public class Intake extends SubsystemBase implements Logged {
   }
 
   public boolean isNoNote() {
-    return this.getState() == State.NO_NOTE;
+    return this.getState() == State.LOOKING_FOR_NOTE;
   }
 
   public boolean isNotePassed() {
@@ -45,7 +47,7 @@ public class Intake extends SubsystemBase implements Logged {
   }
 
   public Command startIntake() {
-    return runOnce(() -> state = State.NO_NOTE);
+    return runOnce(() -> state = State.LOOKING_FOR_NOTE);
   }
 
   public Command stopIntake() {
@@ -64,15 +66,15 @@ public class Intake extends SubsystemBase implements Logged {
   @Override
   public void periodic() {
     switch (state) {
-      case NO_NOTE:
-        leadMotor.set(1); // TODO: Tune speed
+      case LOOKING_FOR_NOTE:
+        leadMotor.set(-1); // TODO: Tune speed
         if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
             < NOTE_FOUND_THRESHOLD.in(Units.Inches)) {
           state = State.NOTE_FOUND;
         }
         break;
       case NOTE_FOUND:
-        leadMotor.set(1); // TODO: Tune
+        leadMotor.set(-1); // TODO: Tune
         if (Units.Inches.of(sensor.getRange()).baseUnitMagnitude()
             > NOTE_PASSED_THRESHOLD.in(Units.Inches)) {
           state = State.NOTE_PASSED;
@@ -81,10 +83,12 @@ public class Intake extends SubsystemBase implements Logged {
       case NOTE_PASSED:
         leadMotor.set(0);
     }
+
+    SmartDashboard.putNumber("intake sensor", sensor.getRange());
   }
 
   private enum State {
-    NO_NOTE,
+    LOOKING_FOR_NOTE,
     NOTE_FOUND,
     NOTE_PASSED
   }

@@ -17,6 +17,7 @@ import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
@@ -25,23 +26,23 @@ import lombok.Getter;
 import monologue.Logged;
 
 public class Hood extends SubsystemBase implements Logged {
-  private static final int LEAD_ANGLE_MOTOR_ID = 13;
-  private static final int FOLLOW_ANGLE_MOTOR_ID = 14;
-  private static final double kV = 4.68; // TODO: Sysid
+  private static final int LEAD_ANGLE_MOTOR_ID = 14;
+  private static final int FOLLOW_ANGLE_MOTOR_ID = 13;
+  private static final double kV = 4.3; // TODO: Sysid
   private static final double kA = 0.01; // TODO: sysid
   private static final double kS = 0;
-  private static final double kG = 0.14;
-  private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = Degrees.of(1);
-  private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = Degrees.of(2);
+  private static final double kG = 0.12;
+  private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = Degrees.of(10);
+  private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = Degrees.of(1.4);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_STANDARD_DEVIATION =
-      Degrees.of(1).per(Seconds);
+      Degrees.of(10).per(Seconds);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE =
-      Degrees.of(5).per(Seconds);
+      Degrees.of(1.3).per(Seconds);
   private static final Measure<Angle> TICKS_TO_ANGLE = Rotations.of(1.0 / 10080.0);
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
-  private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Units.Inches.of(0); // TODO: Tune
+  private static final Measure<Distance> SHOT_FIRED_THRESHOLD = Millimeters.of(300); // TODO: Tune
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
-  private static final Measure<Angle> IDLE_ANGLE = Units.Radians.of(0);
+  private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
   private final PoseEstimator poseEstimator;
   private final CANSparkMax leadAngleMotor;
   private final TimeOfFlight sensor;
@@ -51,13 +52,16 @@ public class Hood extends SubsystemBase implements Logged {
 
   // private final Rev2mDistanceSensor sensor;
 
-  public Hood(ShooterDataTable table, final PoseEstimator poseEstimator) {
+  public Hood(ShooterDataTable table, final PoseEstimator poseEstimator, TimeOfFlight sensor) {
+    this.sensor = sensor;
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    leadAngleMotor.restoreFactoryDefaults();
+    leadAngleMotor.setInverted(true);
     CANSparkMax followAngleMotor =
         new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    followAngleMotor.restoreFactoryDefaults();
     followAngleMotor.follow(leadAngleMotor, true);
     this.table = table;
-    sensor = new TimeOfFlight(16);
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
@@ -124,35 +128,45 @@ public class Hood extends SubsystemBase implements Logged {
     return sensor.getRange();
   }
 
+  public double getAngle() {
+    return leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Degrees);
+  }
+
+  public double getVoltage() {
+    return loop.getU(0);
+  }
+
   @Override
   public void periodic() {
     switch (state) {
       case APPROACHING -> {
-        loop.setNextR(table.get(poseEstimator.translationToSpeaker()).angle().in(Units.Radians));
-        if (loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
-            && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
+        loop.setNextR(table.get(poseEstimator.translationToSpeaker()).angle().in(Units.Radians), 0);
+        if (loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
+            && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond)) {
           state = State.READY;
         }
       }
       case READY -> {
-        if (!(loop.getError(1) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
-            && loop.getError(2) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond))) {
+        if (!(loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
+            && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond))) {
           state = State.APPROACHING;
         }
-        if (sensor.getRange() <= SHOT_FIRED_THRESHOLD.in(Millimeters)) {
+        if (sensor.getRange() >= SHOT_FIRED_THRESHOLD.in(Millimeters)) {
           state = State.IDLE;
         }
       }
-      case IDLE -> {
-        loop.setNextR(IDLE_ANGLE.in(Units.Radians), 0);
-      }
+      case IDLE -> loop.setNextR(IDLE_ANGLE.in(Units.Radians), 0);
     }
     loop.correct(
         VecBuilder.fill(
             leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
     loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
-    leadAngleMotor.set(
+    leadAngleMotor.setVoltage(
         loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
+    SmartDashboard.putNumber("hood sensor", sensor.getRange());
+    SmartDashboard.putNumber("sys volts hood", getVoltage());
+    SmartDashboard.putNumber("hood angle", getAngle());
+    SmartDashboard.putNumber("hood error", loop.getError(0));
   }
 
   private enum State {
