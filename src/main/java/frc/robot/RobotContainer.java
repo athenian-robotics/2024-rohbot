@@ -76,7 +76,7 @@ public class RobotContainer {
               Units.DegreesPerSecond.of(0),
               Units.Degrees.of(0))
         };
-    shooterDataTable = new ShooterDataTable(dummyPoints, dummySpecs);
+    shooterDataTable = new ShooterDataTable(dummyPoints, dummySpecs, false);
 
     PoseEstimator poseEstimator;
     Intake intake;

@@ -10,10 +10,13 @@ import java.util.Optional;
 public class BarycentricInterpolation {
   private final DelaunayTriangulator triangulator;
   private final double[] z;
+  private final boolean verboseLogging;
 
-  public BarycentricInterpolation(double[] x, double[] y, double[] z)
+  public BarycentricInterpolation(double[] x, double[] y, double[] z, boolean verboseLogging)
       throws NotEnoughPointsException {
     this.z = z;
+
+    this.verboseLogging = verboseLogging;
 
     List<Vector2D> vertices = new java.util.ArrayList<>(List.of());
     for (int i = 0; i < x.length; i++) {
@@ -29,14 +32,17 @@ public class BarycentricInterpolation {
     double[] yValues = {0, 1, 0};
     double[] zValues = {10, 20, 30};
 
-    BarycentricInterpolation interpolator = new BarycentricInterpolation(xValues, yValues, zValues);
+    BarycentricInterpolation interpolator =
+        new BarycentricInterpolation(xValues, yValues, zValues, true);
 
     Optional<Double> result = interpolator.interpolate(0, 0);
     System.out.println("Interpolated value: " + result.get());
   }
 
   public Optional<Double> interpolate(double xVal, double yVal) {
-    System.out.println(triangulator.getTriangles());
+    if (verboseLogging) {
+      System.out.println(triangulator.getTriangles());
+    }
     var triangles = triangulator.getTriangles();
     Optional<Triangle2D> optionalContainingTriangle =
         triangles.stream()

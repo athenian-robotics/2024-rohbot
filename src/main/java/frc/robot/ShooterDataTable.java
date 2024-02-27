@@ -18,7 +18,7 @@ public class ShooterDataTable {
   private final BarycentricInterpolation interpolatorSpeedR;
   private final BarycentricInterpolation interpolatorOffset;
 
-  public ShooterDataTable(Translation2d[] points, ShooterSpec[] specs) {
+  public ShooterDataTable(Translation2d[] points, ShooterSpec[] specs, Boolean verboseLogging) {
     double[] x = new double[points.length];
     double[] y = new double[points.length];
     double[] angle = new double[points.length];
@@ -34,10 +34,10 @@ public class ShooterDataTable {
       offset[i] = specs[i].offset().in(Degrees);
     }
     try {
-      interpolatorAngle = new BarycentricInterpolation(x, y, angle);
-      interpolatorSpeedL = new BarycentricInterpolation(x, y, speedL);
-      interpolatorSpeedR = new BarycentricInterpolation(x, y, speedR);
-      interpolatorOffset = new BarycentricInterpolation(x, y, offset);
+      interpolatorAngle = new BarycentricInterpolation(x, y, angle, verboseLogging);
+      interpolatorSpeedL = new BarycentricInterpolation(x, y, speedL, verboseLogging);
+      interpolatorSpeedR = new BarycentricInterpolation(x, y, speedR, verboseLogging);
+      interpolatorOffset = new BarycentricInterpolation(x, y, offset, verboseLogging);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -59,7 +59,7 @@ public class ShooterDataTable {
           new ShooterSpec(Degrees.of(2), RPM.of(2), RPM.of(1), Degrees.of(2)),
           new ShooterSpec(Degrees.of(2), RPM.of(2), RPM.of(2), Degrees.of(2))
         };
-    ShooterDataTable table = new ShooterDataTable(points, specs);
+    ShooterDataTable table = new ShooterDataTable(points, specs, false);
     System.out.println(table.get(new Translation2d(0.5, 0.5)).get());
   }
 
