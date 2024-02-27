@@ -14,6 +14,7 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
+import org.photonvision.targeting.TargetCorner;
 
 public class Vision extends SubsystemBase implements Logged{
 
@@ -56,14 +57,31 @@ public class Vision extends SubsystemBase implements Logged{
     }
   }
 
-  // only going to use this if dual camera manual triangulation is better, haven't completed it yet
-  /*
-  public int[] triangulate(PhotonTrackedTarget object, PhotonCamera secondaryCam){
+
+  // only going to use this if dual camera manual triangulation is better
+  double camDist = 0.5; //camera spacing in meters
+  double camleftFL = 55; //left camera focal in mm
+  double camrightFL = 55; //right camera focal in mm
+  double canvasWidth = 640; //width of view for cameras
+  double canvasHeight = 480; //height of view for cameras
+
+  public double[] triangulate(PhotonTrackedTarget object, PhotonTrackedTarget object2){
       double[] center = getCenter(object);
+      double[] center2 = getCenter(object2);
+      double xOffsetLeft = center[0]-canvasWidth/2;
+      double xOffsetRight = center2[0]-canvasWidth/2;
+      double yOffsetLeft = center[1]-canvasHeight/2;
+      double yOffsetRight = center2[1]-canvasHeight/2;
+
+      //Triangulation methods using similar triangles of camera rays (assuming they are parallel to each other)
+      double zCoord = camDist*camrightFL*camleftFL/(camrightFL*xOffsetRight-camleftFL*xOffsetLeft);
+      double xCoord = ((zCoord*xOffsetRight/camrightFL+camDist)+(zCoord*xOffsetLeft/camleftFL+camDist))/2; //average of 2 different methods to minimize error
+      double yCoord = (yOffsetLeft*zCoord/camleftFL+yOffsetRight*zCoord/camrightFL)/2; //average same as above
+
+      return new double[]{xCoord, yCoord, zCoord};
   }
   public double[] getCenter(PhotonTrackedTarget object){
       List<TargetCorner> corners = object.getDetectedCorners();
       return new double[]{(corners.get(1).x-corners.get(0).x)/2.0, (corners.get(0).y-corners.get(2).y)/2.0};
   }
-   */
 }
