@@ -38,7 +38,7 @@ public class Hood extends SubsystemBase implements Logged {
       Degrees.of(10).per(Seconds);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE =
       Degrees.of(1.3).per(Seconds);
-  private static final Measure<Angle> TICKS_TO_ANGLE = Rotations.of(1.0 / 10080.0);
+  private static final Measure<Angle> TICKS_TO_ANGLE = Rotations.of(1.0 / 11340.0);
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
   private static final Measure<Angle> FLAT_ANGLE = Degrees.of(10);
