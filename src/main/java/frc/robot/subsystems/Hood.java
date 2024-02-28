@@ -28,10 +28,10 @@ import monologue.Logged;
 public class Hood extends SubsystemBase implements Logged {
   private static final int LEAD_ANGLE_MOTOR_ID = 14;
   private static final int FOLLOW_ANGLE_MOTOR_ID = 13;
-  private static final double kV = 4.3; // TODO: Sysid
+  private static final double kV = 5.26; // TODO: Sysid
   private static final double kA = 0.01; // TODO: sysid
   private static final double kS = 0;
-  private static final double kG = 0.12;
+  private static final double kG = 0.09;
   private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = Degrees.of(10);
   private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = Degrees.of(1.4);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_STANDARD_DEVIATION =
