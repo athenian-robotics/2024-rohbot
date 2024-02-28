@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Radians;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
@@ -23,9 +24,12 @@ import lombok.Getter;
 import swervelib.SwerveDrive;
 import swervelib.SwerveDriveTest;
 
+import javax.management.Query;
+
 public class Swerve extends SubsystemBase {
 
-  @Getter private final SwerveDrive swerveDrive;
+    private static final Measure<Angle> ACCEPTABLE_ANGLE_ERROR = Degrees.of(0.1); //TODO: tune/fill
+    @Getter private final SwerveDrive swerveDrive;
   private final ShooterDataTable table;
   private final PoseEstimator poseEstimator;
   private final Measure<Velocity<Velocity<Distance>>> MAXIMUM_ACCELERATION =
@@ -115,4 +119,20 @@ public class Swerve extends SubsystemBase {
             swerveDrive.getMaximumAngularVelocity(),
             MAXIMUM_ANGULAR_ACCELERATION.in(Units.RadiansPerSecond.per(Units.Seconds))));
   }
+
+    public boolean ready() {
+        return Math.abs(
+                poseEstimator
+                        .translationToSpeaker()
+                        .getAngle()
+                        .plus(
+                                new Rotation2d(
+                                        table
+                                                .get(poseEstimator.translationToSpeaker())
+                                                .map(ShooterSpec::offset)
+                                                .orElse(Degrees.of(0))))
+                        .minus(poseEstimator.getPose().getRotation())
+                        .getRadians()
+        ) < ACCEPTABLE_ANGLE_ERROR.in(Radians);
+    }
 }

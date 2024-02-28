@@ -115,8 +115,8 @@ public class Superstructure extends SubsystemBase {
       case SHO0TING -> {
         switch (rangeStatus) {
           case IN_RANGE -> {
-            swerve.faceSpeaker();
-            if (shooter.ready() && hood.ready())
+            swerve.faceSpeaker().schedule();
+            if (shooter.ready() && hood.ready() && swerve.ready())
               intake.on(); // run intake so note goes into hood/shooter/indexer/shootdexer
           }
 
