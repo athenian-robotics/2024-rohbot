@@ -115,17 +115,19 @@ public class Superstructure extends SubsystemBase {
       case SHO0TING -> {
         switch (rangeStatus) {
           case IN_RANGE -> {
-            swerve.faceSpeaker();
-            if (shooter.ready() && hood.ready())
-              intake.on(); // run intake so note goes into hood/shooter/indexer/shootdexer
+            swerve.faceSpeaker().schedule();
+            if (shooter.ready() && hood.ready() && swerve.ready())
+              shooter.activate().schedule(); // run intake so note goes into hood/shooter/indexer/shootdexer
           }
 
           case OUTSIDE_RANGE -> {
             // log?, should never happen
           }
         }
-        if (intake.empty() && shooter.empty())
+        if (intake.empty() && shooter.empty()) {
           state = State.NO_NOTE; // when we are done shooting reset state
+          shooter.deactivate().schedule();
+        }
       }
     }
 

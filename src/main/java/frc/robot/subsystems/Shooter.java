@@ -9,6 +9,7 @@ import com.revrobotics.CANSparkMax;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
@@ -23,6 +24,7 @@ import monologue.Annotations.Log;
 public class Shooter extends SubsystemBase {
   private static final int LEFT_DRIVE_ID = 11;
   private static final int RIGHT_DRIVE_ID = 12;
+  private static final int ACTIVATION_ID = -1; //TODO: fill
   private static final Measure<Voltage> kS = Volts.of(.01);
   private static final Measure<Per<Voltage, Velocity<Angle>>> kV = VoltsPerRadianPerSecond.of(.087);
   private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA =
@@ -35,13 +37,15 @@ public class Shooter extends SubsystemBase {
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
   private static final double EMPTY_THRESHOLD = 290;
   private static final int CURRENT_LIMIT = 20;
-  private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
+  private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 3;
+  private static final double ACTIVATION_SPEED = 0.1; //TODO: Tune
 
   private final PoseEstimator poseEstimator;
   private final CANSparkMax driveL =
       new CANSparkMax(LEFT_DRIVE_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final CANSparkMax driveR =
       new CANSparkMax(RIGHT_DRIVE_ID, CANSparkLowLevel.MotorType.kBrushless);
+  private final CANSparkMax activation = new CANSparkMax(ACTIVATION_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
@@ -51,8 +55,9 @@ public class Shooter extends SubsystemBase {
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
   @Getter @Log.NT private State state = State.APPROACHING;
-  private final TunableNumber numL = new TunableNumber("left shooter power", 0);
-  private final TunableNumber numR = new TunableNumber("right shooter power", 0);
+  private final TunableNumber numL = new TunableNumber("left shooter power deg/s", 0);
+  private final TunableNumber numR = new TunableNumber("right shooter power deg/s", 0);
+  private final TunableNumber numActivation = new TunableNumber("activation motor power percent 0 to 1", 0);
   private final PowerBudget power;
 
   public Shooter(
@@ -101,6 +106,7 @@ public class Shooter extends SubsystemBase {
 
     driveL.setSmartCurrentLimit(CURRENT_LIMIT);
     driveR.setSmartCurrentLimit(CURRENT_LIMIT);
+    activation.setSmartCurrentLimit(CURRENT_LIMIT);
     this.poseEstimator = poseEstimator;
   }
 
@@ -128,6 +134,14 @@ public class Shooter extends SubsystemBase {
 
   public boolean ready() {
     return Math.abs(sysL.getError()) < MAX_ERROR && Math.abs(sysR.getError()) < MAX_ERROR;
+  }
+
+  public Command activate() {
+    return new InstantCommand(() -> state = State.ACTIVATED, this);
+  }
+
+  public Command deactivate() {
+    return new InstantCommand(() -> state = State.APPROACHING, this);
   }
 
   public Command testing() {
@@ -159,7 +173,7 @@ public class Shooter extends SubsystemBase {
     switch (state) {
       case APPROACHING -> {
         if (power.hasCurrent(
-            driveL.getOutputCurrent() + driveR.getOutputCurrent(), TOTAL_CURRENT_LIMIT)) {
+            driveL.getOutputCurrent() + driveR.getOutputCurrent(), TOTAL_CURRENT_LIMIT * 3 / 2)) {
           sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
           sysR.update(getWheelSpeedR().in(RadiansPerSecond));
 
@@ -172,9 +186,11 @@ public class Shooter extends SubsystemBase {
 
           driveL.set(sysL.getOutput());
           driveR.set(sysR.getOutput());
+          activation.set(0);
         }
       }
       case SYSID -> {
+        activation.set(0);
         // chill
       }
       case TESTING -> {
@@ -184,8 +200,28 @@ public class Shooter extends SubsystemBase {
         sysL.set(DegreesPerSecond.of(numL.get()).in(RadiansPerSecond));
         sysR.set(DegreesPerSecond.of(numR.get()).in(RadiansPerSecond));
 
+        activation.set(numActivation.get());
         driveL.set(sysL.getOutput());
         driveR.set(sysR.getOutput());
+      }
+      case ACTIVATED -> {
+        if (power.hasCurrent(
+                driveL.getOutputCurrent() + driveR.getOutputCurrent() + activation.getOutputCurrent(),
+                        TOTAL_CURRENT_LIMIT)) {
+          sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
+          sysR.update(getWheelSpeedR().in(RadiansPerSecond));
+
+          Optional<ShooterSpec> spec = table.get(poseEstimator.translationToSpeaker());
+
+          sysL.set(
+                  spec.map(ShooterSpec::speedL).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
+          sysR.set(
+                  spec.map(ShooterSpec::speedR).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
+
+          driveL.set(sysL.getOutput());
+          driveR.set(sysR.getOutput());
+          activation.set(ACTIVATION_SPEED);
+        }
       }
     }
   }
@@ -197,6 +233,7 @@ public class Shooter extends SubsystemBase {
   private enum State {
     APPROACHING,
     SYSID,
-    TESTING
+    TESTING,
+    ACTIVATED
   }
 }
