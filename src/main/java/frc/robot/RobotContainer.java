@@ -83,6 +83,7 @@ public class RobotContainer {
     Shooter shooter;
     Hood hood;
     NoteDetector noteDetector;
+    Vision vision;
     try {
       poseEstimator =
           new PoseEstimator(
@@ -101,6 +102,7 @@ public class RobotContainer {
       PowerBudget power = new PowerBudget();
       shooter = new Shooter(shooterDataTable, poseEstimator, sensor, power);
       hood = new Hood(shooterDataTable, poseEstimator, sensor, power);
+      vision = new Vision();
 
     } catch (IOException e) {
       throw new RuntimeException(e);
