@@ -8,15 +8,16 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
-import frc.robot.subsystems.Hood;
-import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.Indexer;
+import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.Shooter;
-import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.drive.Swerve;
 import lombok.Getter;
+import monologue.Logged;
 
-public class Superstructure extends SubsystemBase {
+public class Superstructure extends SubsystemBase implements Logged {
   @Getter private final Intake intake;
-  @Getter private final Hood hood;
+  @Getter private final Indexer indexer;
   @Getter private final Shooter shooter;
   @Getter private final Swerve swerve;
   private final PoseEstimator poseEstimator;
@@ -72,14 +73,14 @@ public class Superstructure extends SubsystemBase {
 
   public Superstructure(
       Intake intake,
-      Hood hood,
+      Indexer indexer,
       Shooter shooter,
       Swerve swerve,
       NoteDetector noteDetector,
       PoseEstimator poseEstimator,
       ShooterDataTable dataTable) {
     this.intake = intake;
-    this.hood = hood;
+    this.indexer = indexer;
     this.shooter = shooter;
     this.swerve = swerve;
     this.poseEstimator = poseEstimator;
@@ -99,16 +100,16 @@ public class Superstructure extends SubsystemBase {
 
         intake.on();
         switch (rangeStatus) { // if we know what the hood angle should be, adjust
-          case IN_RANGE -> hood.adjusting();
-          case OUTSIDE_RANGE -> hood.idle();
+          case IN_RANGE -> indexer.adjusting();
+          case OUTSIDE_RANGE -> indexer.idle();
         }
       }
 
       case HAS_NOTE -> {
         intake.off(); // hold note in intake
         switch (rangeStatus) {
-          case IN_RANGE -> hood.adjusting();
-          case OUTSIDE_RANGE -> hood.idle();
+          case IN_RANGE -> indexer.adjusting();
+          case OUTSIDE_RANGE -> indexer.idle();
         }
       }
 
@@ -116,8 +117,10 @@ public class Superstructure extends SubsystemBase {
         switch (rangeStatus) {
           case IN_RANGE -> {
             swerve.faceSpeaker().schedule();
-            if (shooter.ready() && hood.ready() && swerve.ready())
-              shooter.activate().schedule(); // run intake so note goes into hood/shooter/indexer/shootdexer
+            if (shooter.ready() && indexer.ready() && swerve.ready())
+              shooter
+                  .activate()
+                  .schedule(); // run intake so note goes into hood/shooter/indexer/shootdexer
           }
 
           case OUTSIDE_RANGE -> {

@@ -24,7 +24,7 @@ import monologue.Annotations.Log;
 public class Shooter extends SubsystemBase {
   private static final int LEFT_DRIVE_ID = 11;
   private static final int RIGHT_DRIVE_ID = 12;
-  private static final int ACTIVATION_ID = -1; //TODO: fill
+  private static final int ACTIVATION_ID = -1; // TODO: fill
   private static final Measure<Voltage> kS = Volts.of(.01);
   private static final Measure<Per<Voltage, Velocity<Angle>>> kV = VoltsPerRadianPerSecond.of(.087);
   private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA =
@@ -38,14 +38,15 @@ public class Shooter extends SubsystemBase {
   private static final double EMPTY_THRESHOLD = 290;
   private static final int CURRENT_LIMIT = 20;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 3;
-  private static final double ACTIVATION_SPEED = 0.1; //TODO: Tune
+  private static final double ACTIVATION_SPEED = 0.1; // TODO: Tune
 
   private final PoseEstimator poseEstimator;
   private final CANSparkMax driveL =
       new CANSparkMax(LEFT_DRIVE_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final CANSparkMax driveR =
       new CANSparkMax(RIGHT_DRIVE_ID, CANSparkLowLevel.MotorType.kBrushless);
-  private final CANSparkMax activation = new CANSparkMax(ACTIVATION_ID, CANSparkLowLevel.MotorType.kBrushless);
+  private final CANSparkMax activation =
+      new CANSparkMax(ACTIVATION_ID, CANSparkLowLevel.MotorType.kBrushless);
   private final SimpleVelocitySystem sysL;
   private final SimpleVelocitySystem sysR;
   private final ShooterDataTable table;
@@ -57,7 +58,8 @@ public class Shooter extends SubsystemBase {
   @Getter @Log.NT private State state = State.APPROACHING;
   private final TunableNumber numL = new TunableNumber("left shooter power deg/s", 0);
   private final TunableNumber numR = new TunableNumber("right shooter power deg/s", 0);
-  private final TunableNumber numActivation = new TunableNumber("activation motor power percent 0 to 1", 0);
+  private final TunableNumber numActivation =
+      new TunableNumber("activation motor power percent 0 to 1", 0);
   private final PowerBudget power;
 
   public Shooter(
@@ -206,17 +208,17 @@ public class Shooter extends SubsystemBase {
       }
       case ACTIVATED -> {
         if (power.hasCurrent(
-                driveL.getOutputCurrent() + driveR.getOutputCurrent() + activation.getOutputCurrent(),
-                        TOTAL_CURRENT_LIMIT)) {
+            driveL.getOutputCurrent() + driveR.getOutputCurrent() + activation.getOutputCurrent(),
+            TOTAL_CURRENT_LIMIT)) {
           sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
           sysR.update(getWheelSpeedR().in(RadiansPerSecond));
 
           Optional<ShooterSpec> spec = table.get(poseEstimator.translationToSpeaker());
 
           sysL.set(
-                  spec.map(ShooterSpec::speedL).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
+              spec.map(ShooterSpec::speedL).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
           sysR.set(
-                  spec.map(ShooterSpec::speedR).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
+              spec.map(ShooterSpec::speedR).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
 
           driveL.set(sysL.getOutput());
           driveR.set(sysR.getOutput());

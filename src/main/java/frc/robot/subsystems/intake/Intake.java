@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.intake;
 
 import static monologue.Annotations.Log;
 
@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import monologue.Logged;
 
-public class Intake extends SubsystemBase implements Logged {
+public class Intake extends SubsystemBase {
   private static final int LEAD_MOTOR_ID = 9;
   private static final int FOLLOW_MOTOR_ID = 10;
   private static final double EMPTY_THRESHOLD = 680;
@@ -29,7 +29,6 @@ public class Intake extends SubsystemBase implements Logged {
     sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
   }
 
-  @Log.NT
   public Double getDistance() {
     return sensor.getRange();
   }

@@ -25,7 +25,7 @@ import frc.robot.lib.TunableNumber;
 import lombok.Getter;
 import monologue.Logged;
 
-public class Hood extends SubsystemBase implements Logged {
+public class Indexer extends SubsystemBase implements Logged {
   private static final int LEAD_ANGLE_MOTOR_ID = 14;
   private static final int FOLLOW_ANGLE_MOTOR_ID = 13;
   private static final double kV = 5.26; // TODO: Sysid
@@ -58,7 +58,7 @@ public class Hood extends SubsystemBase implements Logged {
 
   // private final Rev2mDistanceSensor sensor;
 
-  public Hood(
+  public Indexer(
       ShooterDataTable table,
       final PoseEstimator poseEstimator,
       TimeOfFlight sensor,

@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -59,6 +61,8 @@ public class PoseEstimator implements Subsystem {
     return new Translation2d(swervePose2d.getX(), swervePose2d.getY());
   }
 
+
+  @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
     Pose2d swervePose2d = getEstimatedPosition.get();
     return new Pose2d(swervePose2d.getX(), swervePose2d.getY(), gyro.getRotation2d());
@@ -87,5 +91,13 @@ public class PoseEstimator implements Subsystem {
       }
       update.accept(gyro.getRotation2d(), getModulePositions.get());
     }
+  }
+
+    public void setPose(Pose2d pose2d) {
+     // TODO: Implement
+    }
+
+  public void resetPosition(Rotation2d rawGyroRotation, SwerveModulePosition[] modulePositions, Pose2d pose) {
+    // TODO: Implement
   }
 }
