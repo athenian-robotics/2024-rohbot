@@ -6,7 +6,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.ArrayList;
 import java.util.List;
-import monologue.Annotations;
+import monologue.Annotations.Log;
 import monologue.Logged;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonUtils;
@@ -15,27 +15,44 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
 public class Vision extends SubsystemBase implements Logged {
+  private double CAMERA_HEIGHT_METERS = 0.5; // TODO: Fix these values of all the constants
+  private double TARGET_HEIGHT_METERS = 0.3;
+  private double CAMERA_PITCH_RADIANS = 0.3;
+  private String LEFT_CAM_ID = "Leftcam"; // TODO: Make sure actual names
+  private String RIGHT_CAM_ID = "Rightcam";
+  private PhotonCamera leftCamera;
+  private PhotonCamera
+      rightCamera; // only going to use this if dual camera manual triangulation is better
 
-  // Some constants
-  double CAMERA_HEIGHT_METERS = 0.5; // TODO: Fix these values of all the constants
-  double TARGET_HEIGHT_METERS = 0.3;
-  double CAMERA_PITCH_RADIANS = 0.3;
-  String LEFT_CAM_ID = "LeftCam"; // TODO: Make sure actual names
-  String RIGHT_CAM_ID = "RightCam";
-  PhotonCamera leftCamera;
-  PhotonCamera rightCamera;
-  @Annotations.Log.NT ArrayList<Translation2d> objectPoses;
+  private double camDist = 0.5; // camera spacing in meters
+  private double camleftFL = 55; // left camera focal in mm
+  private double camrightFL = 55; // right camera focal in mm
+  private double canvasWidth = 640; // width of view for cameras
+  private double canvasHeight = 480; // height of view for cameras
+
+  public ArrayList<Translation2d> objectPoses = new ArrayList<>() {};
 
   public Vision() {
     leftCamera = new PhotonCamera(LEFT_CAM_ID);
+    objectPoses.add(new Translation2d(1, 2));
     // rightCamera = new PhotonCamera(rightCamID); Currently only using one camera
+  }
 
+  @Log.NT
+  public Translation2d[] getPoses() {
+    return (Translation2d[]) objectPoses.toArray();
+  }
+
+  @Log.NT
+  public Translation2d testTranslation2d() {
+    return objectPoses.get(0);
   }
 
   @Override
   public void periodic() {
-    objectPoses.clear();
-    populatePose2d(leftCamera.getLatestResult());
+    // objectPoses.clear();
+    // populatePose2d(leftCamera.getLatestResult());
+    System.out.println(objectPoses);
   }
 
   public void populatePose2d(PhotonPipelineResult latestResult) {
@@ -54,13 +71,6 @@ public class Vision extends SubsystemBase implements Logged {
     }
   }
 
-  // only going to use this if dual camera manual triangulation is better
-  double camDist = 0.5; // camera spacing in meters
-  double camleftFL = 55; // left camera focal in mm
-  double camrightFL = 55; // right camera focal in mm
-  double canvasWidth = 640; // width of view for cameras
-  double canvasHeight = 480; // height of view for cameras
-
   public double[] triangulate(PhotonTrackedTarget object, PhotonTrackedTarget object2) {
     double[] center = getCenter(object);
     double[] center2 = getCenter(object2);
@@ -69,7 +79,8 @@ public class Vision extends SubsystemBase implements Logged {
     double yOffsetLeft = center[1] - canvasHeight / 2;
     double yOffsetRight = center2[1] - canvasHeight / 2;
 
-    // Triangulation methods using similar triangles of camera rays (assuming they are parallel to
+    // Triangulation methods using similar triangles of camera rays (assuming they
+    // are parallel to
     // each other)
     double zCoord =
         camDist * camrightFL * camleftFL / (camrightFL * xOffsetRight - camleftFL * xOffsetLeft);

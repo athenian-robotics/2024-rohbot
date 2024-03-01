@@ -32,6 +32,7 @@ public class RobotContainer implements Logged {
     SwerveDriveTelemetry.verbosity = SwerveDriveTelemetry.TelemetryVerbosity.HIGH;
   }
 
+  private final Vision vision = new Vision();
   private final Swerve drivebase;
   private final Superstructure superstructure;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
@@ -85,7 +86,6 @@ public class RobotContainer implements Logged {
     Shooter shooter;
     Hood hood;
     NoteDetector noteDetector;
-    Vision vision;
     try {
       poseEstimator =
           new PoseEstimator(
@@ -104,7 +104,6 @@ public class RobotContainer implements Logged {
       PowerBudget power = new PowerBudget();
       shooter = new Shooter(shooterDataTable, poseEstimator, sensor, power);
       hood = new Hood(shooterDataTable, poseEstimator, sensor, power);
-      vision = new Vision();
 
     } catch (IOException e) {
       throw new RuntimeException(e);

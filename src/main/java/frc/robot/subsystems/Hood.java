@@ -23,7 +23,6 @@ import frc.robot.ShooterSpec;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.TunableNumber;
 import lombok.Getter;
-import monologue.Annotations;
 import monologue.Logged;
 
 public class Hood extends SubsystemBase implements Logged {
@@ -53,7 +52,7 @@ public class Hood extends SubsystemBase implements Logged {
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
   private final CANSparkMax followAngleMotor;
-  @Log.NT @Getter private State state = State.FLAT;
+  @Log.NT @Getter public State state = State.FLAT;
   private final PowerBudget power;
   private final TunableNumber angle = new TunableNumber("hood angle", 0);
 
