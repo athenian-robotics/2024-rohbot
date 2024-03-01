@@ -23,6 +23,7 @@ import frc.robot.ShooterSpec;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.TunableNumber;
 import lombok.Getter;
+import monologue.Annotations;
 import monologue.Logged;
 
 public class Hood extends SubsystemBase implements Logged {
@@ -116,10 +117,12 @@ public class Hood extends SubsystemBase implements Logged {
     followAngleMotor.getEncoder().setPositionConversionFactor(42.0);
   }
 
+  @Log.NT
   public double getAngle() {
     return leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Degrees);
   }
 
+  @Log.NT
   public double getVoltage() {
     return loop.getU(0);
   }
