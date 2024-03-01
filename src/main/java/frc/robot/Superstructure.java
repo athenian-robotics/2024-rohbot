@@ -13,8 +13,9 @@ import frc.robot.subsystems.Intake;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import lombok.Getter;
+import monologue.Logged;
 
-public class Superstructure extends SubsystemBase {
+public class Superstructure extends SubsystemBase implements Logged {
   @Getter private final Intake intake;
   @Getter private final Hood hood;
   @Getter private final Shooter shooter;

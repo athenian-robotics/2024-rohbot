@@ -1,5 +1,7 @@
 package frc.robot;
 
+import static monologue.Annotations.*;
+
 import com.playingwithfusion.TimeOfFlight;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Distance;
@@ -15,14 +17,14 @@ import frc.robot.lib.controllers.Thrustmaster;
 import frc.robot.subsystems.*;
 import java.io.File;
 import java.io.IOException;
+import monologue.Logged;
 import org.photonvision.PhotonCamera;
 import swervelib.SwerveDrive;
 import swervelib.math.SwerveMath;
 import swervelib.parser.SwerveParser;
 import swervelib.telemetry.SwerveDriveTelemetry;
 
-public class RobotContainer {
-
+public class RobotContainer implements Logged {
   private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
 
