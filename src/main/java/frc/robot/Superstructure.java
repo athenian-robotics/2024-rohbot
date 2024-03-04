@@ -8,16 +8,16 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
-import frc.robot.subsystems.Indexer;
-import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.indexer.IndexerIOPhysical;
+import frc.robot.subsystems.intake.IntakeIOSparkMax;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.drive.Swerve;
 import lombok.Getter;
 import monologue.Logged;
 
 public class Superstructure extends SubsystemBase implements Logged {
-  @Getter private final Intake intake;
-  @Getter private final Indexer indexer;
+  @Getter private final IntakeIOSparkMax intake;
+  @Getter private final IndexerIOPhysical indexer;
   @Getter private final Shooter shooter;
   @Getter private final Swerve swerve;
   private final PoseEstimator poseEstimator;
@@ -72,8 +72,8 @@ public class Superstructure extends SubsystemBase implements Logged {
   private State.RangeStatus rangeStatus = State.RangeStatus.OUTSIDE_RANGE;
 
   public Superstructure(
-      Intake intake,
-      Indexer indexer,
+      IntakeIOSparkMax intake,
+      IndexerIOPhysical indexer,
       Shooter shooter,
       Swerve swerve,
       NoteDetector noteDetector,

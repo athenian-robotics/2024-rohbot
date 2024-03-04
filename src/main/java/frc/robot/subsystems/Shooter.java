@@ -18,6 +18,8 @@ import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.SimpleVelocitySystem;
 import frc.robot.lib.TunableNumber;
 import java.util.Optional;
+
+import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
 import monologue.Annotations.Log;
 
@@ -60,10 +62,10 @@ public class Shooter extends SubsystemBase {
   private final TunableNumber numR = new TunableNumber("right shooter power deg/s", 0);
   private final TunableNumber numActivation =
       new TunableNumber("activation motor power percent 0 to 1", 0);
-  private final PowerBudget power;
+  private final PowerBudgetPhysical power;
 
   public Shooter(
-      ShooterDataTable table, PoseEstimator poseEstimator, TimeOfFlight sensor, PowerBudget power) {
+      ShooterDataTable table, PoseEstimator poseEstimator, TimeOfFlight sensor, PowerBudgetPhysical power) {
 
     this.table = table;
     this.sensor = sensor;

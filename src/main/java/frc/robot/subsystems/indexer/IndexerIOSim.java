@@ -1,7 +1,4 @@
-package frc.robot.subsystems;
-
-import static edu.wpi.first.units.Units.*;
-import static monologue.Annotations.Log;
+package frc.robot.subsystems.indexer;
 
 import com.playingwithfusion.TimeOfFlight;
 import com.revrobotics.CANSparkLowLevel;
@@ -14,20 +11,22 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
 import frc.robot.inputs.PoseEstimator;
-import frc.robot.lib.TunableNumber;
+import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
-import monologue.Logged;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
-public class Indexer extends SubsystemBase implements Logged {
-  private static final int LEAD_ANGLE_MOTOR_ID = 14;
-  private static final int FOLLOW_ANGLE_MOTOR_ID = 13;
+import static edu.wpi.first.units.Units.*;
+
+public class IndexerIOSim extends SubsystemBase implements IndexerIO {
   private static final double kV = 5.26; // TODO: Sysid
   private static final double kA = 0.01; // TODO: sysid
   private static final double kS = 0;
@@ -45,38 +44,33 @@ public class Indexer extends SubsystemBase implements Logged {
   private static final int CURRENT_LIMIT = 15;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
   private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
+  private static final double GEAR_RATIO = 240 / 1;
 
   private final PoseEstimator poseEstimator;
   private final CANSparkMax leadAngleMotor;
   private final TimeOfFlight sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
-  private final CANSparkMax followAngleMotor;
-  @Log.NT @Getter private State state = State.FLAT;
-  private final PowerBudget power;
-  private final TunableNumber angle = new TunableNumber("hood angle", 0);
+  private final DCMotor motors;
+  @Getter private State state = State.IDLE;
+  private final PowerBudgetPhysical power;
+  private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
 
-  // private final Rev2mDistanceSensor sensor;
-
-  public Indexer(
+  SingleJointedArmSim sim;
+  public IndexerIOSim(
       ShooterDataTable table,
       final PoseEstimator poseEstimator,
       TimeOfFlight sensor,
-      PowerBudget power) {
+      PowerBudgetPhysical power) {
     this.sensor = sensor;
     this.power = power;
-    leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    leadAngleMotor.restoreFactoryDefaults();
-    leadAngleMotor.setInverted(true);
-    leadAngleMotor.setSmartCurrentLimit(CURRENT_LIMIT);
-    followAngleMotor =
-        new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    followAngleMotor.restoreFactoryDefaults();
-    followAngleMotor.setSmartCurrentLimit(CURRENT_LIMIT);
-    followAngleMotor.follow(leadAngleMotor, true);
     this.table = table;
 
+
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
+
+    motors = DCMotor.getNeoVortex(2);
+    sim = new SingleJointedArmSim(sys, motors, GEAR_RATIO, Inches.of(20).in(Meters), 0, 3/4 * Math.PI, true, 0);
 
     KalmanFilter<N2, N1, N1> filter =
         new KalmanFilter<>(
@@ -116,8 +110,8 @@ public class Indexer extends SubsystemBase implements Logged {
     followAngleMotor.getEncoder().setPositionConversionFactor(42.0);
   }
 
-  public double getAngle() {
-    return leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Degrees);
+  public Measure<Angle> getAngle() {
+    return Degrees.of(leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Degrees));
   }
 
   public double getVoltage() {
@@ -149,34 +143,22 @@ public class Indexer extends SubsystemBase implements Logged {
       leadAngleMotor.setVoltage(
           loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
     }
-
-    SmartDashboard.putNumber("hood sensor", sensor.getRange());
-    SmartDashboard.putNumber("sys volts hood", getVoltage());
-    SmartDashboard.putNumber("hood angle", getAngle());
-    SmartDashboard.putNumber("hood error", loop.getError(0));
   }
 
-  public void flat() {
-    state = State.FLAT;
+  @Override
+  public void setState(State state) {
+    this.state = state;
   }
 
-  public void adjusting() {
-    state = State.ADJUSTING;
-  }
-
+    @Override
+    public void updateInputs(IndexerIOInputs inputs) {
+        inputs.angle = getAngle();
+        inputs.appliedVoltage = getVoltage();
+        inputs.state = state;
+        inputs.sensorDistance = sensor.getRange();
+    }
   public boolean ready() {
     return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
         && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond);
-  }
-
-  public void idle() {
-    state = State.IDLE;
-  }
-
-  private enum State {
-    FLAT,
-    ADJUSTING,
-    IDLE,
-    TESTING
   }
 }

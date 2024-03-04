@@ -13,16 +13,19 @@ import frc.robot.subsystems.*;
 import java.io.IOException;
 
 import frc.robot.subsystems.drive.Swerve;
-import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.indexer.IndexerIOPhysical;
+import frc.robot.subsystems.intake.IntakeIOSparkMax;
+import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import org.photonvision.PhotonCamera;
 
 public class RobotContainer {
 
   private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
+  public static boolean INTAKE_SENSOR_TRIGGERED;
 
 
-  private final Swerve drivebase;
+    private final Swerve drivebase;
   private final Superstructure superstructure;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
@@ -52,9 +55,9 @@ public class RobotContainer {
     shooterDataTable = new ShooterDataTable(dummyPoints, dummySpecs, false);
 
     PoseEstimator poseEstimator;
-    Intake intake;
+    IntakeIOSparkMax intake;
     Shooter shooter;
-    Indexer indexer;
+    IndexerIOPhysical indexer;
     NoteDetector noteDetector;
     try {
       poseEstimator =
@@ -63,13 +66,13 @@ public class RobotContainer {
       // TODO: Remember to replace with the actual camera name
       PhotonCamera photonCamera = new PhotonCamera("photonvision");
       noteDetector = new NoteDetector(photonCamera, poseEstimator);
-      intake = new Intake();
+      intake = new IntakeIOSparkMax();
       TimeOfFlight sensor = new TimeOfFlight(15);
       sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
 
-      PowerBudget power = new PowerBudget();
+      PowerBudgetPhysical power = new PowerBudgetPhysical();
       shooter = new Shooter(shooterDataTable, poseEstimator, sensor, power);
-      indexer = new Indexer(shooterDataTable, poseEstimator, sensor, power);
+      indexer = new IndexerIOPhysical(shooterDataTable, poseEstimator, sensor, power);
 
     } catch (IOException e) {
       throw new RuntimeException(e);

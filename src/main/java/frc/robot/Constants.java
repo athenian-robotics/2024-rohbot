@@ -10,6 +10,7 @@ package frc.robot;
  */
 public final class Constants {
     public static final Mode currentMode = Mode.REAL;
+    public static boolean INTAKE_SENSOR_TRIGGERED = false;
 
     public static enum Mode {
         /** Running on a real robot. */
