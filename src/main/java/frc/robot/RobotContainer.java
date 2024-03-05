@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.controllers.Thrustmaster;
-import frc.robot.subsystems.*;
 
 import java.io.IOException;
 
@@ -16,6 +15,7 @@ import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.IndexerIOPhysical;
 import frc.robot.subsystems.intake.IntakeIOSparkMax;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
+import frc.robot.subsystems.shooter.Shooter;
 import org.photonvision.PhotonCamera;
 
 public class RobotContainer {

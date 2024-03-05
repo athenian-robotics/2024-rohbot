@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.subsystems.shooter;
 
 import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.*;
@@ -22,6 +22,7 @@ import java.util.Optional;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
 import monologue.Annotations.Log;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class Shooter extends SubsystemBase {
   private static final int LEFT_DRIVE_ID = 11;
@@ -57,11 +58,10 @@ public class Shooter extends SubsystemBase {
   private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Second).of(0));
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
-  @Getter @Log.NT private State state = State.APPROACHING;
-  private final TunableNumber numL = new TunableNumber("left shooter power deg/s", 0);
-  private final TunableNumber numR = new TunableNumber("right shooter power deg/s", 0);
-  private final TunableNumber numActivation =
-      new TunableNumber("activation motor power percent 0 to 1", 0);
+  @Getter private ShooterIO.State state = ShooterIO.State.APPROACHING;
+  private final LoggedDashboardNumber numL = new LoggedDashboardNumber("left shooter power deg/s", 0);
+    private final LoggedDashboardNumber numR = new LoggedDashboardNumber("right shooter power deg/s", 0);
+  private final LoggedDashboardNumber numActivation = new LoggedDashboardNumber("activation motor power percent 0 to 1", 0);
   private final PowerBudgetPhysical power;
 
   public Shooter(
@@ -126,12 +126,10 @@ public class Shooter extends SubsystemBase {
         .angularVelocity(velocity.mut_replace(driveR.getBusVoltage(), Rotations.per(Second)));
   }
 
-  @Log.NT
   private Measure<Velocity<Angle>> getWheelSpeedL() {
     return Units.RotationsPerSecond.of(driveL.getEncoder().getVelocity());
   }
 
-  @Log.NT
   private Measure<Velocity<Angle>> getWheelSpeedR() {
     return Units.RotationsPerSecond.of(driveR.getEncoder().getVelocity());
   }
@@ -224,7 +222,7 @@ public class Shooter extends SubsystemBase {
 
           driveL.set(sysL.getOutput());
           driveR.set(sysR.getOutput());
-          activation.set(ACTIVATION_SPEED);
+          activation.set(ACTIVATION_SPEED); //TODO: chat what is this (refactor activation shit)
         }
       }
     }
@@ -234,10 +232,5 @@ public class Shooter extends SubsystemBase {
     return sensor.getRange() >= EMPTY_THRESHOLD;
   }
 
-  private enum State {
-    APPROACHING,
-    SYSID,
-    TESTING,
-    ACTIVATED
-  }
+
 }

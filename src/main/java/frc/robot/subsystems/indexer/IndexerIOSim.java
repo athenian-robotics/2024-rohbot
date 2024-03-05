@@ -47,8 +47,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
   private static final double GEAR_RATIO = 240 / 1;
 
   private final PoseEstimator poseEstimator;
-  private final CANSparkMax leadAngleMotor;
-  private final TimeOfFlight sensor;
+  private final LoggedDashboardNumber sensorDistance = new LoggedDashboardNumber("sensor distance", 0);
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
   private final DCMotor motors;
@@ -60,9 +59,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
   public IndexerIOSim(
       ShooterDataTable table,
       final PoseEstimator poseEstimator,
-      TimeOfFlight sensor,
       PowerBudgetPhysical power) {
-    this.sensor = sensor;
     this.power = power;
     this.table = table;
 
@@ -70,7 +67,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
     motors = DCMotor.getNeoVortex(2);
-    sim = new SingleJointedArmSim(sys, motors, GEAR_RATIO, Inches.of(20).in(Meters), 0, 3/4 * Math.PI, true, 0);
+    sim = new SingleJointedArmSim(sys, motors, GEAR_RATIO, Inches.of(20).in(Meters), 0, (double) 3 /4 * Math.PI, true, 0);
 
     KalmanFilter<N2, N1, N1> filter =
         new KalmanFilter<>(
@@ -101,17 +98,10 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
             ROBOT_TIME_STEP.in(Units.Seconds));
 
     this.poseEstimator = poseEstimator;
-
-    leadAngleMotor.getEncoder().setPosition(0.0);
-    followAngleMotor.getEncoder().setPosition(0.0);
-    leadAngleMotor
-        .getEncoder()
-        .setPositionConversionFactor(42.0); // Causes encoder to output in ticks, not rotations
-    followAngleMotor.getEncoder().setPositionConversionFactor(42.0);
   }
 
   public Measure<Angle> getAngle() {
-    return Degrees.of(leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Degrees));
+    return Radians.of(sim.getAngleRads());
   }
 
   public double getVoltage() {
@@ -134,15 +124,16 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
     }
 
     if (power.hasCurrent(
-        leadAngleMotor.getOutputCurrent() + followAngleMotor.getOutputCurrent(),
-        TOTAL_CURRENT_LIMIT)) {
+        sim.getCurrentDrawAmps(), TOTAL_CURRENT_LIMIT)) {
       loop.correct(
           VecBuilder.fill(
-              leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
+                  sim.getAngleRads()));
       loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
-      leadAngleMotor.setVoltage(
+      sim.setInputVoltage(
           loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
     }
+
+    power.report(sim.getCurrentDrawAmps());
   }
 
   @Override
@@ -155,7 +146,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
         inputs.angle = getAngle();
         inputs.appliedVoltage = getVoltage();
         inputs.state = state;
-        inputs.sensorDistance = sensor.getRange();
+        inputs.sensorDistance = sensorDistance.get();
     }
   public boolean ready() {
     return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)

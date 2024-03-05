@@ -15,6 +15,7 @@ import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
 public class Vision extends SubsystemBase implements Logged {
+  // TODO: figure out vision sim?????
 
   // Some constants
   double CAMERA_HEIGHT_METERS = 0.5; // TODO: Fix these values of all the constants

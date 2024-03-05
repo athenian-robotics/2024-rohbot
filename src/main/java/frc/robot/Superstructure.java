@@ -10,7 +10,7 @@ import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.subsystems.indexer.IndexerIOPhysical;
 import frc.robot.subsystems.intake.IntakeIOSparkMax;
-import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.drive.Swerve;
 import lombok.Getter;
 import monologue.Logged;

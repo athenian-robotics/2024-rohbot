@@ -57,7 +57,7 @@ public class Swerve extends SubsystemBase {
                     new SwerveModulePosition()
             };
 
-    // TODO: fix pose estimator
+    // TODO: fix pose estimator and periodic and switch to high frequency odometry
     public Swerve(
             GyroIO gyroIO,
             ModuleIO flModuleIO,

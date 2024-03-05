@@ -43,7 +43,7 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
   @Override
   public void on() {
     intakeOn = true;
-    leadMotor.set(-2);
+    leadMotor.set(-1);
   }
 
   @Override
