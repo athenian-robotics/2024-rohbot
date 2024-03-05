@@ -46,7 +46,6 @@ public class IndexerIOPhysical implements IndexerIO {
 
   private final PoseEstimator poseEstimator;
   private final CANSparkMax leadAngleMotor;
-  private final TimeOfFlight sensor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
   private final CANSparkMax followAngleMotor;
@@ -59,7 +58,6 @@ public class IndexerIOPhysical implements IndexerIO {
       final PoseEstimator poseEstimator,
       TimeOfFlight sensor,
       PowerBudgetPhysical power) {
-    this.sensor = sensor;
     this.power = power;
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     leadAngleMotor.restoreFactoryDefaults();
@@ -127,7 +125,7 @@ public class IndexerIOPhysical implements IndexerIO {
           table
               .get(poseEstimator.translationToSpeaker())
               .map(ShooterSpec::angle)
-              .orElse(Degrees.of(0))
+              .orElse(IDLE_ANGLE)
               .in(Units.Radians),
           0);
       case TESTING -> loop.setNextR(Degrees.of(angle.get()).in(Radians), 0);
@@ -156,7 +154,6 @@ public class IndexerIOPhysical implements IndexerIO {
         inputs.angle = getAngle();
         inputs.appliedVoltage = getVoltage();
         inputs.state = state;
-        inputs.sensorDistance = sensor.getRange();
     }
   public boolean ready() {
     return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)

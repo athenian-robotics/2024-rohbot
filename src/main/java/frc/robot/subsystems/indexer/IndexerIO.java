@@ -8,8 +8,6 @@ import org.littletonrobotics.junction.AutoLog;
 public interface IndexerIO  {
     @AutoLog
     public static class IndexerIOInputs {
-        public boolean hasNote;
-        public double sensorDistance;
         public Measure<Angle> angle;
         public Measure<Velocity<Angle>> velocity;
         public double appliedVoltage;
@@ -24,4 +22,5 @@ public interface IndexerIO  {
     public default void updateInputs(IndexerIOInputs inputs) {}
     public default void setState(State state) {}
     public boolean ready();
+    public void periodic();
 }

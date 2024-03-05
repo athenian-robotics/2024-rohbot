@@ -25,7 +25,7 @@ public class Vision extends SubsystemBase implements Logged {
   String RIGHT_CAM_ID = "RightCam";
   PhotonCamera leftCamera;
   PhotonCamera rightCamera;
-  @Annotations.Log.NT ArrayList<Translation2d> objectPoses;
+ ArrayList<Translation2d> objectPoses;
 
   public Vision() {
     leftCamera = new PhotonCamera(LEFT_CAM_ID);

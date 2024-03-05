@@ -15,7 +15,7 @@ import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.indexer.IndexerIOPhysical;
 import frc.robot.subsystems.intake.IntakeIOSparkMax;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
-import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIOPhysical;
 import org.photonvision.PhotonCamera;
 
 public class RobotContainer {
@@ -56,7 +56,7 @@ public class RobotContainer {
 
     PoseEstimator poseEstimator;
     IntakeIOSparkMax intake;
-    Shooter shooter;
+    ShooterIOPhysical shooter;
     IndexerIOPhysical indexer;
     NoteDetector noteDetector;
     try {
@@ -71,7 +71,7 @@ public class RobotContainer {
       sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
 
       PowerBudgetPhysical power = new PowerBudgetPhysical();
-      shooter = new Shooter(shooterDataTable, poseEstimator, sensor, power);
+      shooter = new ShooterIOPhysical(shooterDataTable, poseEstimator, sensor, power);
       indexer = new IndexerIOPhysical(shooterDataTable, poseEstimator, sensor, power);
 
     } catch (IOException e) {

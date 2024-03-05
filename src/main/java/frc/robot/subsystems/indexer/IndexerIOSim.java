@@ -47,7 +47,6 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
   private static final double GEAR_RATIO = 240 / 1;
 
   private final PoseEstimator poseEstimator;
-  private final LoggedDashboardNumber sensorDistance = new LoggedDashboardNumber("sensor distance", 0);
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
   private final DCMotor motors;
@@ -116,7 +115,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
           table
               .get(poseEstimator.translationToSpeaker())
               .map(ShooterSpec::angle)
-              .orElse(Degrees.of(0))
+              .orElse(IDLE_ANGLE)
               .in(Units.Radians),
           0);
       case TESTING -> loop.setNextR(Degrees.of(angle.get()).in(Radians), 0);
@@ -146,7 +145,6 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
         inputs.angle = getAngle();
         inputs.appliedVoltage = getVoltage();
         inputs.state = state;
-        inputs.sensorDistance = sensorDistance.get();
     }
   public boolean ready() {
     return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)

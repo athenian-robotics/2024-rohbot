@@ -16,10 +16,6 @@ public class Intake extends SubsystemBase {
         io.updateInputs(inputs);
     }
 
-    public boolean hasNote() {
-        return inputs.hasNote;
-    }
-
     public void on() {
         io.on();
     }

@@ -10,7 +10,7 @@ import frc.robot.inputs.NoteDetector;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.subsystems.indexer.IndexerIOPhysical;
 import frc.robot.subsystems.intake.IntakeIOSparkMax;
-import frc.robot.subsystems.shooter.Shooter;
+import frc.robot.subsystems.shooter.ShooterIOPhysical;
 import frc.robot.subsystems.drive.Swerve;
 import lombok.Getter;
 import monologue.Logged;
@@ -18,7 +18,7 @@ import monologue.Logged;
 public class Superstructure extends SubsystemBase implements Logged {
   @Getter private final IntakeIOSparkMax intake;
   @Getter private final IndexerIOPhysical indexer;
-  @Getter private final Shooter shooter;
+  @Getter private final ShooterIOPhysical shooter;
   @Getter private final Swerve swerve;
   private final PoseEstimator poseEstimator;
   private final ShooterDataTable dataTable;
@@ -74,7 +74,7 @@ public class Superstructure extends SubsystemBase implements Logged {
   public Superstructure(
       IntakeIOSparkMax intake,
       IndexerIOPhysical indexer,
-      Shooter shooter,
+      ShooterIOPhysical shooter,
       Swerve swerve,
       NoteDetector noteDetector,
       PoseEstimator poseEstimator,
