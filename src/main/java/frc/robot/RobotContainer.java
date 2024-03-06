@@ -6,7 +6,7 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.inputs.NoteDetector;
-import frc.robot.inputs.PoseEstimator;
+import frc.robot.inputs.poseEstimator.PoseEstimator;
 import frc.robot.lib.controllers.Thrustmaster;
 
 import java.io.IOException;

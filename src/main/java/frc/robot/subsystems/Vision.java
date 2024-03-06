@@ -6,15 +6,13 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.ArrayList;
 import java.util.List;
-import monologue.Annotations;
-import monologue.Logged;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonUtils;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 import org.photonvision.targeting.TargetCorner;
 
-public class Vision extends SubsystemBase implements Logged {
+public class Vision extends SubsystemBase {
   // TODO: figure out vision sim?????
 
   // Some constants

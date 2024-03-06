@@ -18,7 +18,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
-import frc.robot.inputs.PoseEstimator;
+import frc.robot.inputs.poseEstimator.PoseEstimator;
 
 import frc.robot.lib.GyroIOInputsAutoLogged;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -130,6 +130,8 @@ public class Swerve extends SubsystemBase {
         Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
     }
 
+    
+
     /** Stops the drive. */
     public void stop() {
         runVelocity(new ChassisSpeeds());
@@ -181,9 +183,6 @@ public class Swerve extends SubsystemBase {
     public Pose2d getPose() {
         return poseEstimator.getPose();
     }
-
-
-
 
     /**
      * Returns the maximum linear speed in meters per sec.

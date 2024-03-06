@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
-import frc.robot.inputs.PoseEstimator;
+import frc.robot.inputs.poseEstimator.PoseEstimator;
 import frc.robot.lib.SimpleVelocitySystem;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;

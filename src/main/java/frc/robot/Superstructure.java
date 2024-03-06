@@ -7,15 +7,23 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.inputs.NoteDetector;
-import frc.robot.inputs.PoseEstimator;
+import frc.robot.inputs.poseEstimator.PoseEstimator;
 import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.drive.Swerve;
 import lombok.Getter;
-import monologue.Logged;
+import com.playingwithfusion.TimeOfFlight;
+import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
-public class Superstructure extends SubsystemBase implements Logged {
+import java.util.Locale;
+import java.util.function.BooleanSupplier;
+
+public class Superstructure extends SubsystemBase {
+  private static final LoggedDashboardNumber SHOOTER_SENSOR_THRESHOLD = new LoggedDashboardNumber("shooter sensor threshold", 0); // TODO: Tune
+    private static final LoggedDashboardNumber INTAKE_SENSOR_THRESHOLD = new LoggedDashboardNumber("intake sensor threshold", 0); // TODO: Tune
   @Getter private final Intake intake;
   @Getter private final Indexer indexer;
   @Getter private final Shooter shooter;
@@ -68,8 +76,12 @@ public class Superstructure extends SubsystemBase implements Logged {
 
   private final PathPlannerPath fromStartingMiddleToMiddle3 =
       PathPlannerPath.fromChoreoTrajectory("fromStartingMiddleToMiddle3");
-  private State state = State.NO_NOTE;
+  private State state = State.TESTING;
   private State.RangeStatus rangeStatus = State.RangeStatus.OUTSIDE_RANGE;
+  private TimeOfFlight intakeSensor = new TimeOfFlight(11);
+  private TimeOfFlight shooterSensor = new TimeOfFlight(12);
+  private LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
+  private LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
 
   public Superstructure(
       Intake intake,
@@ -93,23 +105,20 @@ public class Superstructure extends SubsystemBase implements Logged {
   public void periodic() {
     switch (state) {
       case NO_NOTE -> {
-        if (intake.hasNote()) {
+        if (!shooterEmpty()) {
           state = State.HAS_NOTE;
           break;
         }
 
         intake.on();
-        switch (rangeStatus) { // if we know what the hood angle should be, adjust
-          case IN_RANGE -> indexer.adjusting();
-          case OUTSIDE_RANGE -> indexer.idle();
-        }
+        indexer.setState(IndexerIO.State.FLAT);
       }
 
       case HAS_NOTE -> {
-        intake.off(); // hold note in intake
+        intake.off();
         switch (rangeStatus) {
-          case IN_RANGE -> indexer.adjusting();
-          case OUTSIDE_RANGE -> indexer.idle();
+          case IN_RANGE -> indexer.setState(IndexerIO.State.ADJUSTING);
+          case OUTSIDE_RANGE -> indexer.setState(IndexerIO.State.IDLE);
         }
       }
 
@@ -118,19 +127,27 @@ public class Superstructure extends SubsystemBase implements Logged {
           case IN_RANGE -> {
             swerve.faceSpeaker().schedule();
             if (shooter.ready() && indexer.ready() && swerve.ready())
-              shooter
-                  .activate()
-                  .schedule(); // run intake so note goes into hood/shooter/indexer/shootdexer
+              shooter.shoot();
           }
 
           case OUTSIDE_RANGE -> {
             // log?, should never happen
           }
         }
-        if (intake.empty() && shooter.empty()) {
+        if (shooterEmpty()) {
           state = State.NO_NOTE; // when we are done shooting reset state
-          shooter.deactivate().schedule();
+          shooter.spinUp();
         }
+      }
+        case TESTING -> {
+        shooter.test();
+        indexer.setState(IndexerIO.State.TESTING);
+
+        if (intakeOn.get()) intake.on();
+        else intake.off();
+
+        if (shoot.get()) shooter.shoot();
+        else shooter.test();
       }
     }
 
@@ -140,18 +157,32 @@ public class Superstructure extends SubsystemBase implements Logged {
             : State.RangeStatus.OUTSIDE_RANGE;
   }
 
+
   public Command shoot() {
     return runOnce(() -> state = State.SHO0TING)
-        .onlyIf(intake::hasNote)
+        .onlyIf(() -> !shooterEmpty())
         .onlyIf(() -> rangeStatus == State.RangeStatus.IN_RANGE);
   }
 
+  public Command test() {
+    return runOnce(() -> state = State.TESTING);
+  }
+
+
   public Command cancelShot() {
     return runOnce(
-        intake.empty() && shooter.empty()
+        shooterEmpty()
             ? () -> state = State.NO_NOTE
             : () -> state = State.HAS_NOTE);
   }
+
+  private boolean shooterEmpty() {
+    return shooterSensor.getRange() > SHOOTER_SENSOR_THRESHOLD.get();
+  }
+
+    private boolean intakeEmpty() {
+        return intakeSensor.getRange() > INTAKE_SENSOR_THRESHOLD.get();
+    }
 
   public Command fromTopWithAmp() {
     return sequence(fromLeftTopToNoteToAmp(), shoot(), fromAmpToMiddle1(), fromMiddle1ToMiddle5());
@@ -195,7 +226,7 @@ public class Superstructure extends SubsystemBase implements Logged {
     return defer(
         () -> {
           // No next action if at the last note and no note is present
-          if (intake.hasNote()) {
+          if (!intakeEmpty()) {
             return sequence(
                 // onTheFlyRobotToNote(),
                 toSpeaker, shoot(), fromSpeakerToNextNote);
@@ -314,8 +345,8 @@ public class Superstructure extends SubsystemBase implements Logged {
   private enum State {
     NO_NOTE,
     HAS_NOTE,
-    SHO0TING;
-
+    SHO0TING,
+    TESTING
     private enum RangeStatus {
       IN_RANGE,
       OUTSIDE_RANGE

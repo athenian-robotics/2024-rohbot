@@ -1,8 +1,5 @@
 package frc.robot.subsystems.indexer;
 
-import com.playingwithfusion.TimeOfFlight;
-import com.revrobotics.CANSparkLowLevel;
-import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.LinearQuadraticRegulator;
@@ -14,12 +11,11 @@ import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
-import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
-import frc.robot.inputs.PoseEstimator;
+import frc.robot.inputs.poseEstimator.PoseEstimator;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;

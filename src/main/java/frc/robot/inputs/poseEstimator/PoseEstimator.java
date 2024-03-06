@@ -1,4 +1,4 @@
-package frc.robot.inputs;
+package frc.robot.inputs.poseEstimator;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
@@ -14,13 +14,14 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
-public class PoseEstimator implements Subsystem {
+public class PoseEstimator extends SubsystemBase {
   private static final Translation2d BLUE_SPEAKER_POSITION = new Translation2d(-1.5, 218.42);
   private static final Translation2d RED_SPEAKER_POSITION = new Translation2d(652.73, 218.42);
   private final PhotonPoseEstimator photonPoseEstimator;
@@ -55,6 +56,7 @@ public class PoseEstimator implements Subsystem {
         new PhotonPoseEstimator(
             aprilTagFieldLayout, PoseStrategy.CLOSEST_TO_REFERENCE_POSE, photonCamera, robotToCam);
   }
+
 
   public Translation2d getPosition() {
     Pose2d swervePose2d = getEstimatedPosition.get();
