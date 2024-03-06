@@ -13,6 +13,7 @@ import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
 import frc.robot.inputs.PoseEstimator;
 import frc.robot.lib.SimpleVelocitySystem;
+import frc.robot.subsystems.powerBudget.PowerBudget;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
@@ -46,7 +47,7 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
     private final LoggedDashboardNumber numL = new LoggedDashboardNumber("left shooter power deg/s", 0);
     private final LoggedDashboardNumber numR = new LoggedDashboardNumber("right shooter power deg/s", 0);
     private final LoggedDashboardBoolean activation = new LoggedDashboardBoolean("shooter activation", false);
-    private final PowerBudgetPhysical power;
+    private final PowerBudget power;
     @Getter
     private State state = SPINUP;
     private FlywheelSim driveL;
@@ -54,7 +55,7 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
     private boolean activated;
 
     public ShooterIOSim(
-            ShooterDataTable table, PoseEstimator poseEstimator, PowerBudgetPhysical power) {
+            ShooterDataTable table, PoseEstimator poseEstimator, PowerBudget power) {
 
         this.table = table;
         this.power = power;
