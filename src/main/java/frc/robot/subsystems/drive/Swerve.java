@@ -69,10 +69,10 @@ public class Swerve extends SubsystemBase {
     this.table = shooterDataTable;
     this.poseEstimator = poseEstimator;
         this.gyroIO = gyroIO;
-        modules[0] = new Module(flModuleIO, 0);
-        modules[1] = new Module(frModuleIO, 1);
-        modules[2] = new Module(blModuleIO, 2);
-        modules[3] = new Module(brModuleIO, 3);
+        modules[0] = new Module(flModuleIO, Module.ModulePosition.FRONT_LEFT);
+        modules[1] = new Module(frModuleIO, Module.ModulePosition.FRONT_RIGHT);
+        modules[2] = new Module(blModuleIO, Module.ModulePosition.BACK_LEFT);
+        modules[3] = new Module(brModuleIO, Module.ModulePosition.BACK_RIGHT);
 
 
 

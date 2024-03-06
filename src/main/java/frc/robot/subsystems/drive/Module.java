@@ -15,7 +15,7 @@ public class Module {
 
     private final ModuleIO io;
     private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
-    private final int index;
+    private final ModulePosition modulePosition;
 
     private final SimpleMotorFeedforward driveFeedforward;
     private final PIDController driveFeedback;
@@ -24,9 +24,9 @@ public class Module {
     private Double speedSetpoint = null; // Setpoint for closed loop control, null for open loop
     private Rotation2d turnRelativeOffset = null; // Relative + Offset = Absolute
 
-    public Module(ModuleIO io, int index) {
+    public Module(ModuleIO io, ModulePosition modulePosition) {
         this.io = io;
-        this.index = index;
+        this.modulePosition = modulePosition;
 
         // Switch constants based on mode (the physics simulator is treated as a
         // separate robot with different tuning)
@@ -56,7 +56,7 @@ public class Module {
 
     public void periodic() {
         io.updateInputs(inputs);
-        Logger.processInputs("Drive/Module" + index, inputs);
+        Logger.processInputs("Drive/Module" + modulePosition, inputs);
 
         // On first cycle, reset relative turn encoder
         // Wait until absolute angle is nonzero in case it wasn't initialized yet
@@ -159,5 +159,12 @@ public class Module {
     /** Returns the drive velocity in radians/sec. */
     public double getCharacterizationVelocity() {
         return inputs.driveVelocityRadPerSec;
+    }
+
+    public enum ModulePosition {
+        FRONT_LEFT,
+        FRONT_RIGHT,
+        BACK_LEFT,
+        BACK_RIGHT
     }
 }

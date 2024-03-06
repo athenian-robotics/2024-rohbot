@@ -16,6 +16,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
 import frc.robot.inputs.poseEstimator.PoseEstimator;
+import frc.robot.inputs.PoseEstimator;
+import frc.robot.subsystems.powerBudget.PowerBudget;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
@@ -47,14 +49,14 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
   private final ShooterDataTable table;
   private final DCMotor motors;
   @Getter private State state = State.IDLE;
-  private final PowerBudgetPhysical power;
+  private final PowerBudget power;
   private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
 
   SingleJointedArmSim sim;
   public IndexerIOSim(
       ShooterDataTable table,
       final PoseEstimator poseEstimator,
-      PowerBudgetPhysical power) {
+      PowerBudget power) {
     this.power = power;
     this.table = table;
 
