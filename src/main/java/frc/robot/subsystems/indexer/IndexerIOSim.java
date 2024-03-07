@@ -1,5 +1,7 @@
 package frc.robot.subsystems.indexer;
 
+import static edu.wpi.first.units.Units.*;
+
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.LinearQuadraticRegulator;
@@ -15,14 +17,10 @@ import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
-import frc.robot.inputs.poseEstimator.PoseEstimator;
-import frc.robot.inputs.PoseEstimator;
+import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.powerBudget.PowerBudget;
-import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
-
-import static edu.wpi.first.units.Units.*;
 
 public class IndexerIOSim extends SubsystemBase implements IndexerIO {
   private static final double kV = 5.26; // TODO: Sysid
@@ -42,29 +40,34 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
   private static final int CURRENT_LIMIT = 15;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
   private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
-  private static final double GEAR_RATIO = 240 / 1;
+  private static final double GEAR_RATIO = 240;
 
-  private final PoseEstimator poseEstimator;
+  private final Drive poseEstimator;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
   private final DCMotor motors;
-  @Getter private State state = State.IDLE;
   private final PowerBudget power;
   private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
-
   SingleJointedArmSim sim;
-  public IndexerIOSim(
-      ShooterDataTable table,
-      final PoseEstimator poseEstimator,
-      PowerBudget power) {
+  @Getter private State state = State.IDLE;
+
+  public IndexerIOSim(ShooterDataTable table, final Drive poseEstimator, PowerBudget power) {
     this.power = power;
     this.table = table;
-
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
 
     motors = DCMotor.getNeoVortex(2);
-    sim = new SingleJointedArmSim(sys, motors, GEAR_RATIO, Inches.of(20).in(Meters), 0, (double) 3 /4 * Math.PI, true, 0);
+    sim =
+        new SingleJointedArmSim(
+            sys,
+            motors,
+            GEAR_RATIO,
+            Inches.of(20).in(Meters),
+            0,
+            (double) 3 / 4 * Math.PI,
+            true,
+            0);
 
     KalmanFilter<N2, N1, N1> filter =
         new KalmanFilter<>(
@@ -120,11 +123,8 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
       case IDLE -> loop.setNextR(IDLE_ANGLE.in(Radians), 0);
     }
 
-    if (power.hasCurrent(
-        sim.getCurrentDrawAmps(), TOTAL_CURRENT_LIMIT)) {
-      loop.correct(
-          VecBuilder.fill(
-                  sim.getAngleRads()));
+    if (power.hasCurrent(sim.getCurrentDrawAmps(), TOTAL_CURRENT_LIMIT)) {
+      loop.correct(VecBuilder.fill(sim.getAngleRads()));
       loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
       sim.setInputVoltage(
           loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
@@ -138,12 +138,13 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
     this.state = state;
   }
 
-    @Override
-    public void updateInputs(IndexerIOInputs inputs) {
-        inputs.angle = getAngle();
-        inputs.appliedVoltage = getVoltage();
-        inputs.state = state;
-    }
+  @Override
+  public void updateInputs(IndexerIOInputs inputs) {
+    inputs.angle = getAngle();
+    inputs.appliedVoltage = getVoltage();
+    inputs.state = state;
+  }
+
   public boolean ready() {
     return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
         && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond);

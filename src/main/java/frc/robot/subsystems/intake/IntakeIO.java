@@ -3,15 +3,14 @@ package frc.robot.subsystems.intake;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface IntakeIO {
-    @AutoLog
-    public static class IntakeIOInputs {
-        public double sensorDistance;
-        public boolean hasNote;
-        public boolean on;
-    }
+  default void updateInputs(IntakeIOInputs inputs) {}
 
-    public default void updateInputs(IntakeIOInputs inputs) {}
+  default void on() {}
 
-    public default void on() {}
-    public default void off() {}
+  default void off() {}
+
+  @AutoLog
+  class IntakeIOInputs {
+    public boolean on;
+  }
 }

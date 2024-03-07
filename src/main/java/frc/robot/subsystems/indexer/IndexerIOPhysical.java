@@ -2,7 +2,6 @@ package frc.robot.subsystems.indexer;
 
 import static edu.wpi.first.units.Units.*;
 
-import com.playingwithfusion.TimeOfFlight;
 import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.Nat;
@@ -17,14 +16,14 @@ import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
-import frc.robot.inputs.poseEstimator.PoseEstimator;
+import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class IndexerIOPhysical implements IndexerIO {
-  private static final int LEAD_ANGLE_MOTOR_ID = 14;
-  private static final int FOLLOW_ANGLE_MOTOR_ID = 13;
+  private static final int LEAD_ANGLE_MOTOR_ID = 10;
+  private static final int FOLLOW_ANGLE_MOTOR_ID = 11;
   private static final double kV = 5.26; // TODO: Sysid
   private static final double kA = 0.01; // TODO: sysid
   private static final double kS = 0;
@@ -39,24 +38,21 @@ public class IndexerIOPhysical implements IndexerIO {
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
   private static final Measure<Angle> FLAT_ANGLE = Degrees.of(10);
-  private static final int CURRENT_LIMIT = 15;
+  private static final int CURRENT_LIMIT = 20;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
   private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
 
-  private final PoseEstimator poseEstimator;
+  private final Drive poseEstimator;
   private final CANSparkMax leadAngleMotor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
   private final CANSparkMax followAngleMotor;
-  @Getter private State state = State.IDLE;
   private final PowerBudgetPhysical power;
   private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
+  @Getter private State state = State.IDLE;
 
   public IndexerIOPhysical(
-      ShooterDataTable table,
-      final PoseEstimator poseEstimator,
-      TimeOfFlight sensor,
-      PowerBudgetPhysical power) {
+      ShooterDataTable table, final Drive poseEstimator, PowerBudgetPhysical power) {
     this.power = power;
     leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     leadAngleMotor.restoreFactoryDefaults();
@@ -148,12 +144,13 @@ public class IndexerIOPhysical implements IndexerIO {
     this.state = state;
   }
 
-    @Override
-    public void updateInputs(IndexerIOInputs inputs) {
-        inputs.angle = getAngle();
-        inputs.appliedVoltage = getVoltage();
-        inputs.state = state;
-    }
+  @Override
+  public void updateInputs(IndexerIOInputs inputs) {
+    inputs.angle = getAngle();
+    inputs.appliedVoltage = getVoltage();
+    inputs.state = state;
+  }
+
   public boolean ready() {
     return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
         && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond);

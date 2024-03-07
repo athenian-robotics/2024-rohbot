@@ -1,0 +1,40 @@
+{
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo"
+    }
+  },
+  "NetworkTables": {
+    "transitory": {
+      "AdvantageKit": {
+        "indexer": {
+          "open": true
+        },
+        "open": true
+      },
+      "SmartDashboard": {
+        "left shooter power deg": {
+          "open": true
+        },
+        "open": true
+      },
+      "photonvision": {
+        "cam": {
+          "open": true
+        },
+        "photonvision": {
+          "open": true
+        }
+      }
+    }
+  },
+  "NetworkTables Info": {
+    "Server": {
+      "Publishers": {
+        "open": true
+      },
+      "open": true
+    },
+    "visible": true
+  }
+}

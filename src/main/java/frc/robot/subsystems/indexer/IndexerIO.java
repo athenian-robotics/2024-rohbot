@@ -5,22 +5,27 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.Velocity;
 import org.littletonrobotics.junction.AutoLog;
 
-public interface IndexerIO  {
-    @AutoLog
-    public static class IndexerIOInputs {
-        public Measure<Angle> angle;
-        public Measure<Velocity<Angle>> velocity;
-        public double appliedVoltage;
-        public State state;
-    }
-    enum State {
-        FLAT,
-        ADJUSTING,
-        IDLE,
-        TESTING
-    }
-    public default void updateInputs(IndexerIOInputs inputs) {}
-    public default void setState(State state) {}
-    public boolean ready();
-    public void periodic();
+public interface IndexerIO {
+  default void updateInputs(IndexerIOInputs inputs) {}
+
+  default void setState(State state) {}
+
+  boolean ready();
+
+  void periodic();
+
+  enum State {
+    FLAT,
+    ADJUSTING,
+    IDLE,
+    TESTING
+  }
+
+  @AutoLog
+  class IndexerIOInputs {
+    public Measure<Angle> angle;
+    public Measure<Velocity<Angle>> velocity;
+    public double appliedVoltage;
+    public State state;
+  }
 }

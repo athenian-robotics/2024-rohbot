@@ -4,31 +4,29 @@ import static edu.wpi.first.wpilibj2.command.Commands.sequence;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.playingwithfusion.TimeOfFlight;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.inputs.NoteDetector;
-import frc.robot.inputs.poseEstimator.PoseEstimator;
+import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.drive.Swerve;
 import lombok.Getter;
-import com.playingwithfusion.TimeOfFlight;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
-import java.util.Locale;
-import java.util.function.BooleanSupplier;
-
 public class Superstructure extends SubsystemBase {
-  private static final LoggedDashboardNumber SHOOTER_SENSOR_THRESHOLD = new LoggedDashboardNumber("shooter sensor threshold", 0); // TODO: Tune
-    private static final LoggedDashboardNumber INTAKE_SENSOR_THRESHOLD = new LoggedDashboardNumber("intake sensor threshold", 0); // TODO: Tune
+  private static final LoggedDashboardNumber SHOOTER_SENSOR_THRESHOLD =
+      new LoggedDashboardNumber("shooter sensor threshold", 0); // TODO: Tune
+  private static final LoggedDashboardNumber INTAKE_SENSOR_THRESHOLD =
+      new LoggedDashboardNumber("intake sensor threshold", 0); // TODO: Tune
   @Getter private final Intake intake;
   @Getter private final Indexer indexer;
   @Getter private final Shooter shooter;
-  @Getter private final Swerve swerve;
-  private final PoseEstimator poseEstimator;
+  @Getter private final Drive swerve;
+  private final Drive poseEstimator;
   private final ShooterDataTable dataTable;
 
   private final PathPlannerPath leftTopToNoteToAmpTraj =
@@ -76,26 +74,19 @@ public class Superstructure extends SubsystemBase {
 
   private final PathPlannerPath fromStartingMiddleToMiddle3 =
       PathPlannerPath.fromChoreoTrajectory("fromStartingMiddleToMiddle3");
-  private State state = State.TESTING;
-  private State.RangeStatus rangeStatus = State.RangeStatus.OUTSIDE_RANGE;
-  private TimeOfFlight intakeSensor = new TimeOfFlight(11);
-  private TimeOfFlight shooterSensor = new TimeOfFlight(12);
-  private LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
-  private LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
+  @AutoLogOutput private State state = State.SYSID;
+  @AutoLogOutput private State.RangeStatus rangeStatus = State.RangeStatus.OUTSIDE_RANGE;
+  private final TimeOfFlight shooterSensor = new TimeOfFlight(12);
+  private final LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
+  private final LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
 
   public Superstructure(
-      Intake intake,
-      Indexer indexer,
-      Shooter shooter,
-      Swerve swerve,
-      NoteDetector noteDetector,
-      PoseEstimator poseEstimator,
-      ShooterDataTable dataTable) {
+      Intake intake, Indexer indexer, Shooter shooter, Drive swerve, ShooterDataTable dataTable) {
     this.intake = intake;
     this.indexer = indexer;
     this.shooter = shooter;
     this.swerve = swerve;
-    this.poseEstimator = poseEstimator;
+    this.poseEstimator = swerve;
     this.dataTable = dataTable;
   }
 
@@ -126,8 +117,7 @@ public class Superstructure extends SubsystemBase {
         switch (rangeStatus) {
           case IN_RANGE -> {
             swerve.faceSpeaker().schedule();
-            if (shooter.ready() && indexer.ready() && swerve.ready())
-              shooter.shoot();
+            if (shooter.ready() && indexer.ready() && swerve.ready()) shooter.shoot();
           }
 
           case OUTSIDE_RANGE -> {
@@ -139,7 +129,7 @@ public class Superstructure extends SubsystemBase {
           shooter.spinUp();
         }
       }
-        case TESTING -> {
+      case TESTING -> {
         shooter.test();
         indexer.setState(IndexerIO.State.TESTING);
 
@@ -149,6 +139,11 @@ public class Superstructure extends SubsystemBase {
         if (shoot.get()) shooter.shoot();
         else shooter.test();
       }
+
+      case SYSID -> {
+        // chill down
+
+      }
     }
 
     rangeStatus =
@@ -156,7 +151,6 @@ public class Superstructure extends SubsystemBase {
             ? State.RangeStatus.IN_RANGE
             : State.RangeStatus.OUTSIDE_RANGE;
   }
-
 
   public Command shoot() {
     return runOnce(() -> state = State.SHO0TING)
@@ -168,21 +162,13 @@ public class Superstructure extends SubsystemBase {
     return runOnce(() -> state = State.TESTING);
   }
 
-
   public Command cancelShot() {
-    return runOnce(
-        shooterEmpty()
-            ? () -> state = State.NO_NOTE
-            : () -> state = State.HAS_NOTE);
+    return runOnce(shooterEmpty() ? () -> state = State.NO_NOTE : () -> state = State.HAS_NOTE);
   }
 
   private boolean shooterEmpty() {
     return shooterSensor.getRange() > SHOOTER_SENSOR_THRESHOLD.get();
   }
-
-    private boolean intakeEmpty() {
-        return intakeSensor.getRange() > INTAKE_SENSOR_THRESHOLD.get();
-    }
 
   public Command fromTopWithAmp() {
     return sequence(fromLeftTopToNoteToAmp(), shoot(), fromAmpToMiddle1(), fromMiddle1ToMiddle5());
@@ -226,7 +212,7 @@ public class Superstructure extends SubsystemBase {
     return defer(
         () -> {
           // No next action if at the last note and no note is present
-          if (!intakeEmpty()) {
+          if (!shooterEmpty()) {
             return sequence(
                 // onTheFlyRobotToNote(),
                 toSpeaker, shoot(), fromSpeakerToNextNote);
@@ -346,7 +332,9 @@ public class Superstructure extends SubsystemBase {
     NO_NOTE,
     HAS_NOTE,
     SHO0TING,
-    TESTING
+    TESTING,
+    SYSID;
+
     private enum RangeStatus {
       IN_RANGE,
       OUTSIDE_RANGE

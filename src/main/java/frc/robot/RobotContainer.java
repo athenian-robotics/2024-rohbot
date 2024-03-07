@@ -1,18 +1,15 @@
 package frc.robot;
 
-import com.playingwithfusion.TimeOfFlight;
+import static edu.wpi.first.wpilibj2.command.Commands.runOnce;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.inputs.NoteDetector;
-import frc.robot.inputs.poseEstimator.PoseEstimator;
 import frc.robot.lib.controllers.Thrustmaster;
-
-import java.io.IOException;
-
 import frc.robot.subsystems.drive.*;
-import frc.robot.subsystems.drive.Module;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIOPhysical;
 import frc.robot.subsystems.indexer.IndexerIOSim;
@@ -25,9 +22,9 @@ import frc.robot.subsystems.powerBudget.PowerBudgetSim;
 import frc.robot.subsystems.shooter.Shooter;
 import frc.robot.subsystems.shooter.ShooterIOPhysical;
 import frc.robot.subsystems.shooter.ShooterIOSim;
-import org.photonvision.PhotonCamera;
-
-import static frc.robot.subsystems.drive.Module.ModulePosition.*;
+import frc.robot.vision.Vision;
+import frc.robot.vision.VisionIOPhoton;
+import frc.robot.vision.VisionIOSim;
 
 public class RobotContainer {
 
@@ -35,74 +32,62 @@ public class RobotContainer {
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
 
   public static boolean INTAKE_SENSOR_TRIGGERED;
-
-  private final Swerve drivebase;
-  private final Superstructure superstructure;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
+  private Intake intake = null;
+  private Shooter shooter = null;
+  private Indexer indexer = null;
+  private Drive drivebase = null;
+  private Superstructure superstructure = null;
 
   public RobotContainer() {
     switch (Constants.currentMode) {
-      case REAL -> {//     TODO: Ensure to get the actual points
+      default -> { //     TODO: Ensure to get the actual points
         ShooterDataTable shooterDataTable;
         Translation2d[] dummyPoints =
-                new Translation2d[]{new Translation2d(), new Translation2d(), new Translation2d()};
+            new Translation2d[] {new Translation2d(), new Translation2d(), new Translation2d()};
         ShooterSpec[] dummySpecs =
-                new ShooterSpec[]{
-                        new ShooterSpec(
-                                Units.Degrees.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.Degrees.of(0)),
-                        new ShooterSpec(
-                                Units.Degrees.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.Degrees.of(0)),
-                        new ShooterSpec(
-                                Units.Degrees.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.Degrees.of(0))
-                };
+            new ShooterSpec[] {
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0)),
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0)),
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0))
+            };
         shooterDataTable = new ShooterDataTable(dummyPoints, dummySpecs, false);
+        drivebase =
+            new Drive(
+                new GyroIOPigeon2(false),
+                new ModuleIOSparkMax(0),
+                new ModuleIOSparkMax(1),
+                new ModuleIOSparkMax(2),
+                new ModuleIOSparkMax(3),
+                shooterDataTable,
+                new Vision(new VisionIOPhoton())); // TODO: add shit
 
-        PoseEstimator poseEstimator;
-        IntakeIOSparkMax intake;
-        ShooterIOPhysical shooter;
-        IndexerIOPhysical indexer;
-        NoteDetector noteDetector;
-        try {
-          poseEstimator =
-                  new PoseEstimator(
-                          new PhotonCamera("cam"));
-          // TODO: Remember to replace with the actual camera name
-          PhotonCamera photonCamera = new PhotonCamera("photonvision");
-          noteDetector = new NoteDetector(photonCamera, poseEstimator);
-          intake = new IntakeIOSparkMax();
-          TimeOfFlight sensor = new TimeOfFlight(15);
-          sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
+        // TODO: Remember to replace with the actual camera name
+        // noteDetector = new NoteDetector(photonCamera, poseEstimator);
+        intake = new Intake(new IntakeIOSparkMax());
 
-          PowerBudgetPhysical power = new PowerBudgetPhysical();
-          shooter = new ShooterIOPhysical(shooterDataTable, poseEstimator, power);
-          indexer = new IndexerIOPhysical(shooterDataTable, poseEstimator, sensor, power);
+        PowerBudgetPhysical power = new PowerBudgetPhysical();
+        shooter = new Shooter(new ShooterIOPhysical(shooterDataTable, drivebase, power));
+        indexer = new Indexer(new IndexerIOPhysical(shooterDataTable, drivebase, power));
 
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-
-        drivebase = new Swerve(new Pigeon2IO(), new ModuleIOSparkMax(FRONT_LEFT), new ModuleIOSparkMax(FRONT_RIGHT),
-                new ModuleIOSparkMax(BACK_LEFT), new ModuleIOSparkMax(BACK_RIGHT), shooterDataTable, poseEstimator); //TODO: add shit
-
-        superstructure =
-                new Superstructure(
-                        intake, indexer, shooter, drivebase, noteDetector, poseEstimator, shooterDataTable);
-
-        Command driveFieldOrientedDirectAngle =
-                drivebase.driveCommand(
-                        () -> -leftThrustmaster.getY(),
-                        () -> -leftThrustmaster.getX(),
-                        () -> -rightThrustmaster.getX());
-        drivebase.setDefaultCommand(driveFieldOrientedDirectAngle);
+        superstructure = new Superstructure(intake, indexer, shooter, drivebase, shooterDataTable);
+        drivebase.setDefaultCommand(
+            drivebase.joystickDrive(
+                () -> -leftThrustmaster.getY(),
+                () -> -leftThrustmaster.getX(),
+                () -> -rightThrustmaster.getX()));
         configureBindings();
 
         //    autoChooser.addOption("Top with amp", superstructure.fromTopWithAmp());
@@ -114,44 +99,57 @@ public class RobotContainer {
       case SIM -> {
         ShooterDataTable shooterDataTable;
         Translation2d[] dummyPoints =
-                new Translation2d[]{new Translation2d(), new Translation2d(), new Translation2d()};
+            new Translation2d[] {new Translation2d(), new Translation2d(), new Translation2d()};
         ShooterSpec[] dummySpecs =
-                new ShooterSpec[]{
-                        new ShooterSpec(
-                                Units.Degrees.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.Degrees.of(0)),
-                        new ShooterSpec(
-                                Units.Degrees.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.Degrees.of(0)),
-                        new ShooterSpec(
-                                Units.Degrees.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.DegreesPerSecond.of(0),
-                                Units.Degrees.of(0))
-                };
+            new ShooterSpec[] {
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0)),
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0)),
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0))
+            };
         shooterDataTable = new ShooterDataTable(dummyPoints, dummySpecs, false);
 
-        PoseEstimator poseEstimator = null; // TODO: REPLACE
-
-        drivebase = new Swerve(null, new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim(), new ModuleIOSim(),
-                shooterDataTable, poseEstimator);
+        drivebase =
+            new Drive(
+                new GyroIO() {},
+                new ModuleIOSim(),
+                new ModuleIOSim(),
+                new ModuleIOSim(),
+                new ModuleIOSim(),
+                shooterDataTable,
+                new Vision(new VisionIOSim()));
 
         PowerBudget powerBudget = new PowerBudget(new PowerBudgetSim());
         Intake intake = new Intake(new IntakeSim(powerBudget));
-        Indexer indexer = new Indexer(new IndexerIOSim(shooterDataTable, poseEstimator, powerBudget));
-        Shooter shooter = new Shooter(new ShooterIOSim(shooterDataTable, poseEstimator, powerBudget));
-        superstructure = new Superstructure(intake, indexer, shooter, drivebase, null, poseEstimator, shooterDataTable)
+        Indexer indexer = new Indexer(new IndexerIOSim(shooterDataTable, drivebase, powerBudget));
+        Shooter shooter = new Shooter(new ShooterIOSim(shooterDataTable, drivebase, powerBudget));
+        superstructure = new Superstructure(intake, indexer, shooter, drivebase, shooterDataTable);
       }
     }
   }
 
   private void configureBindings() {
-    rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(drivebase.resetHeading());
+    rightThrustmaster
+        .getButton(Thrustmaster.Button.TRIGGER)
+        .onTrue(
+            runOnce(
+                () ->
+                    drivebase.setPose(
+                        new Pose2d(drivebase.getPose().getTranslation(), new Rotation2d()))));
     leftThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shoot());
+
+    leftThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(shooter.sysId());
   }
 
   public Command getAutonomousCommand() {

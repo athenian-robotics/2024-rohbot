@@ -1,27 +1,30 @@
 package frc.robot.subsystems.indexer;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
 
 public class Indexer extends SubsystemBase {
-    private final IndexerIO io;
-    private final IndexerIO.IndexerIOInputs inputs;
+  private final IndexerIO io;
+  private final IndexerIOInputsAutoLogged inputs;
 
-    public Indexer(IndexerIO io) {
-        this.io = io;
-        inputs = new IndexerIO.IndexerIOInputs();
-    }
+  public Indexer(IndexerIO io) {
+    this.io = io;
+    inputs = new IndexerIOInputsAutoLogged();
+  }
 
-    @Override
-    public void periodic() {
-        io.updateInputs(inputs);
-        io.periodic();
-    }
+  @Override
+  public void periodic() {
+    io.updateInputs(inputs);
+    io.periodic();
 
-    public void setState(IndexerIO.State state) {
-        io.setState(state);
-    }
+    Logger.processInputs("indexer", inputs);
+  }
 
-    public boolean ready() {
-        return io.ready();
-    }
+  public void setState(IndexerIO.State state) {
+    io.setState(state);
+  }
+
+  public boolean ready() {
+    return io.ready();
+  }
 }

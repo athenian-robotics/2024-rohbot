@@ -3,14 +3,17 @@ package frc.robot.subsystems.powerBudget;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface PowerBudgetIO {
-    @AutoLog
-    public static class PowerBudget {
-        public double currentlyUsing;
-        public double batteryVoltage;
-    }
+  void updateInputs(PowerBudget inputs);
 
-    public void updateInputs(PowerBudget inputs);
-    abstract public boolean hasCurrent(double currentlyUsing, double wantToUse);
-    public default void report(final double currentDrawAmps, final int... channels) {}
-    public default void report(final double currentDrawAmps) {}
+  boolean hasCurrent(double currentlyUsing, double wantToUse);
+
+  default void report(final double currentDrawAmps, final int... channels) {}
+
+  default void report(final double currentDrawAmps) {}
+
+  @AutoLog
+  class PowerBudget {
+    public double currentlyUsing;
+    public double batteryVoltage;
+  }
 }

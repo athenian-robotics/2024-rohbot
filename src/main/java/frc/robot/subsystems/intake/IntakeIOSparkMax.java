@@ -1,9 +1,8 @@
 package frc.robot.subsystems.intake;
 
-
-import com.playingwithfusion.TimeOfFlight;
-import com.revrobotics.CANSparkLowLevel;
-import com.revrobotics.CANSparkMax;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
@@ -12,32 +11,20 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
   private static final double EMPTY_THRESHOLD = 680;
   private static final double HAS_NOTE_THRESHOLD = 375;
   private static final int CURRENT_LIMIT = 10;
-  private final CANSparkMax leadMotor;
-  private final TimeOfFlight sensor;
+  private final TalonFX leadMotor;
   private boolean intakeOn = false;
 
   public IntakeIOSparkMax() {
-    leadMotor = new CANSparkMax(LEAD_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
-    CANSparkMax followMotor =
-        new CANSparkMax(FOLLOW_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    leadMotor = new TalonFX(LEAD_MOTOR_ID, "can");
+    TalonFX followMotor = new TalonFX(FOLLOW_MOTOR_ID, "can");
 
-    leadMotor.restoreFactoryDefaults();
-    followMotor.restoreFactoryDefaults();
-
-    followMotor.follow(leadMotor);
-    leadMotor.setSmartCurrentLimit(CURRENT_LIMIT);
-    followMotor.setSmartCurrentLimit(CURRENT_LIMIT);
-
-    sensor = new TimeOfFlight(16);
-    sensor.setRangingMode(TimeOfFlight.RangingMode.Short, 0.02);
-  }
-
-  public Double getDistance() {
-    return sensor.getRange();
-  }
-
-  private boolean hasNote() {
-    return sensor.getRange() <= HAS_NOTE_THRESHOLD;
+    leadMotor
+        .getConfigurator()
+        .apply(new CurrentLimitsConfigs().withSupplyCurrentLimit(CURRENT_LIMIT));
+    followMotor
+        .getConfigurator()
+        .apply(new CurrentLimitsConfigs().withSupplyCurrentLimit(CURRENT_LIMIT));
+    followMotor.setControl(new Follower(LEAD_MOTOR_ID, false));
   }
 
   @Override
@@ -52,13 +39,8 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
     leadMotor.set(0);
   }
 
-    @Override
-    public void updateInputs(IntakeIOInputs inputs) {
-        inputs.on = intakeOn;
-        inputs.sensorDistance = sensor.getRange();
-        inputs.hasNote = hasNote();
-    }
-  public boolean empty() {
-    return sensor.getRange() >= EMPTY_THRESHOLD;
+  @Override
+  public void updateInputs(IntakeIOInputs inputs) {
+    inputs.on = intakeOn;
   }
 }
