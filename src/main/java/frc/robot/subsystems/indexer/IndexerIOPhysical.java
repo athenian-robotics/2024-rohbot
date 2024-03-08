@@ -2,8 +2,8 @@ package frc.robot.subsystems.indexer;
 
 import static edu.wpi.first.units.Units.*;
 
+import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel;
-import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.Nat;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.LinearQuadraticRegulator;
@@ -15,7 +15,10 @@ import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
@@ -24,7 +27,9 @@ import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
 import lombok.Getter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
-public class IndexerIOPhysical implements IndexerIO {
+import javax.management.Query;
+
+public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   private static final int LEAD_ANGLE_MOTOR_ID = 10;
   private static final int FOLLOW_ANGLE_MOTOR_ID = 11;
   private static final double kV = 5.26; // TODO: Sysid
@@ -37,38 +42,42 @@ public class IndexerIOPhysical implements IndexerIO {
       Degrees.of(10).per(Seconds);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE =
       Degrees.of(1.3).per(Seconds);
-  private static final Measure<Angle> TICKS_TO_ANGLE = Rotations.of(1.0 / 11340.0);
+  private static final Measure<Angle> ROT_TO_ANGLE = Rotations.of(1 / ((54.0 / 22) * 60));
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Units.Volts.of(12);
   private static final Measure<Time> ROBOT_TIME_STEP = Units.Milli(Units.Milliseconds).of(20);
   private static final Measure<Angle> FLAT_ANGLE = Degrees.of(10);
-  private static final int CURRENT_LIMIT = 20;
+  private static final int CURRENT_LIMIT = 30;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
   private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
+  private static final Measure<Angle> AMP_ANGLE = Degrees.of(95); // TODO: tunes;
 
   private final Drive poseEstimator;
-  private final CANSparkMax leadAngleMotor;
+  private final CANSparkFlex leadAngleMotor;
   private final LinearSystemLoop<N2, N1, N1> loop;
   private final ShooterDataTable table;
-  private final CANSparkMax followAngleMotor;
+  private final CANSparkFlex followAngleMotor;
   private final PowerBudgetPhysical power;
   private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
   private final SysIdRoutine routine;
   @Getter private State state = State.IDLE;
-  private double UPPER_LIMIT = 0;
-  private double LOWER_LIMIT = 0;
+
+  @Getter private double UPPER_LIMIT = 30; // 40
+  @Getter private double LOWER_LIMIT = 10;
 
   public IndexerIOPhysical(
       ShooterDataTable table, final Drive poseEstimator, PowerBudgetPhysical power) {
     this.power = power;
-    leadAngleMotor = new CANSparkMax(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+    leadAngleMotor = new CANSparkFlex(LEAD_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     leadAngleMotor.restoreFactoryDefaults();
-    leadAngleMotor.setInverted(true);
+    leadAngleMotor.setInverted(false);
     leadAngleMotor.setSmartCurrentLimit(CURRENT_LIMIT);
     followAngleMotor =
-        new CANSparkMax(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
+        new CANSparkFlex(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followAngleMotor.restoreFactoryDefaults();
     followAngleMotor.setSmartCurrentLimit(CURRENT_LIMIT);
     followAngleMotor.follow(leadAngleMotor, true);
+
+
     this.table = table;
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
@@ -81,7 +90,7 @@ public class IndexerIOPhysical implements IndexerIO {
             VecBuilder.fill(
                 ANGLE_STANDARD_DEVIATION.in(Units.Radians),
                 ANGLE_SPEED_STANDARD_DEVIATION.in(Units.RadiansPerSecond)),
-            VecBuilder.fill(TICKS_TO_ANGLE.in(Units.Radians)),
+            VecBuilder.fill(ROT_TO_ANGLE.in(Units.Radians)),
             ROBOT_TIME_STEP.in(Units.Seconds));
 
     LinearQuadraticRegulator<N2, N1, N1> controller =
@@ -103,32 +112,35 @@ public class IndexerIOPhysical implements IndexerIO {
 
     routine =
         new SysIdRoutine(
-            new SysIdRoutine.Config(Volts.per(Seconds).of(1), Volts.of(12), Seconds.of(10)),
+            new SysIdRoutine.Config(Volts.per(Seconds).of(10), Volts.of(12), Seconds.of(1.2)),
             new SysIdRoutine.Mechanism(
-                (Measure<Voltage> volts) -> leadAngleMotor.setVoltage(volts.in(Volts)),
+                (Measure<Voltage> volts) -> {
+                  leadAngleMotor.setVoltage(volts.in(Volts));
+                  followAngleMotor.setVoltage(-volts.in(Volts));
+                },
                 this::log,
-                null,
+                this,
                 "hood-motor"));
 
     this.poseEstimator = poseEstimator;
 
     leadAngleMotor.getEncoder().setPosition(0.0);
     followAngleMotor.getEncoder().setPosition(0.0);
-    leadAngleMotor
-        .getEncoder()
-        .setPositionConversionFactor(42.0); // Causes encoder to output in ticks, not rotations
-    followAngleMotor.getEncoder().setPositionConversionFactor(42.0);
+
+    leadAngleMotor.burnFlash();
+    followAngleMotor.burnFlash();
   }
 
   private void log(SysIdRoutineLog sysIdRoutineLog) {
     sysIdRoutineLog
         .motor("hood-motor")
         .voltage(Volts.of(leadAngleMotor.getAppliedOutput() * leadAngleMotor.getBusVoltage()))
-        .angularPosition(Rotations.of(leadAngleMotor.getEncoder().getPosition()));
+        .angularPosition(Rotations.of(leadAngleMotor.getEncoder().getPosition()))
+        .angularVelocity(RotationsPerSecond.of(leadAngleMotor.getEncoder().getVelocity()));
   }
 
   public Measure<Angle> getAngle() {
-    return Degrees.of(leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Degrees));
+    return Degrees.of(leadAngleMotor.getEncoder().getPosition() * ROT_TO_ANGLE.in(Degrees));
   }
 
   public double getVoltage() {
@@ -147,14 +159,19 @@ public class IndexerIOPhysical implements IndexerIO {
           0);
       case TESTING -> loop.setNextR(Degrees.of(angle.get()).in(Radians), 0);
       case IDLE -> loop.setNextR(IDLE_ANGLE.in(Radians), 0);
+      case SYSID -> {}
+        case AMP -> {
+          loop.setNextR(AMP_ANGLE.in(Radians));
+        }
     }
 
     if (power.hasCurrent(
-        leadAngleMotor.getOutputCurrent() + followAngleMotor.getOutputCurrent(),
-        TOTAL_CURRENT_LIMIT)) {
+            leadAngleMotor.getOutputCurrent() + followAngleMotor.getOutputCurrent(),
+            TOTAL_CURRENT_LIMIT)
+        && state != State.SYSID) {
       loop.correct(
           VecBuilder.fill(
-              leadAngleMotor.getEncoder().getPosition() * TICKS_TO_ANGLE.in(Units.Radians)));
+              leadAngleMotor.getEncoder().getPosition() * ROT_TO_ANGLE.in(Units.Radians)));
       loop.predict(ROBOT_TIME_STEP.in(Units.Seconds));
       leadAngleMotor.setVoltage(
           loop.getU(0) + kS * Math.signum(loop.getNextR(1) + kG * Math.cos(loop.getNextR(0))));
@@ -168,23 +185,38 @@ public class IndexerIOPhysical implements IndexerIO {
 
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
-    inputs.angle = getAngle();
+    inputs.angle = leadAngleMotor.getEncoder().getPosition();
+    inputs.velocity = leadAngleMotor.getEncoder().getVelocity();
     inputs.appliedVoltage = getVoltage();
     inputs.state = state;
+    inputs.inBounds = upperBound() && lowerBound();
+  }
+
+  @Override
+  public Command zero() {
+    return runOnce(() -> leadAngleMotor.getEncoder().setPosition(0));
   }
 
   @Override
   public SequentialCommandGroup sysId() {
+    state = State.SYSID;
     return routine
-        .quasistatic(SysIdRoutine.Direction.kForward).onlyWhile((this::inBounds))
-        .andThen(routine.quasistatic(SysIdRoutine.Direction.kReverse).onlyWhile(this::inBounds))
-        .andThen(routine.dynamic(SysIdRoutine.Direction.kForward).onlyWhile(this::inBounds))
-        .andThen(routine.dynamic(SysIdRoutine.Direction.kReverse).onlyWhile(this::inBounds));
+        .quasistatic(SysIdRoutine.Direction.kForward)
+        .onlyWhile((this::upperBound))
+        .andThen(new WaitCommand(.5))
+        .andThen(routine.quasistatic(SysIdRoutine.Direction.kReverse).onlyWhile(this::lowerBound))
+        .andThen(new WaitCommand(.5))
+        .andThen(routine.dynamic(SysIdRoutine.Direction.kForward).onlyWhile(this::upperBound))
+        .andThen(new WaitCommand(.5))
+        .andThen(routine.dynamic(SysIdRoutine.Direction.kReverse).onlyWhile(this::lowerBound));
   }
 
-  private boolean inBounds() {
-    return leadAngleMotor.getEncoder().getPosition() < UPPER_LIMIT
-        && leadAngleMotor.getEncoder().getPosition() > LOWER_LIMIT;
+  private boolean upperBound() {
+    return leadAngleMotor.getEncoder().getPosition() < UPPER_LIMIT;
+  }
+
+  private boolean lowerBound() {
+    return leadAngleMotor.getEncoder().getPosition() > LOWER_LIMIT;
   }
 
   public boolean ready() {

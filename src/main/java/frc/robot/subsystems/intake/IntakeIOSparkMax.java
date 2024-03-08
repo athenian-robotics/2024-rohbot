@@ -16,6 +16,7 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
 
   public IntakeIOSparkMax() {
     leadMotor = new TalonFX(LEAD_MOTOR_ID, "can");
+    leadMotor.setInverted(true);
     TalonFX followMotor = new TalonFX(FOLLOW_MOTOR_ID, "can");
 
     leadMotor

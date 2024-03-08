@@ -69,13 +69,13 @@ public class ModuleIOSparkMax implements ModuleIO {
         turnAbsoluteEncoder = new CANcoder(2, "can");
         absoluteEncoderOffset = new Rotation2d(2.0217866784); // MUST BE CALIBRATED
         break;
-      case 2:
+      case 3:
         driveSparkMax = new CANSparkMax(4, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(5, MotorType.kBrushless);
         turnAbsoluteEncoder = new CANcoder(3, "can");
         absoluteEncoderOffset = new Rotation2d(-1.825437137); // MUST BE CALIBRATED
         break;
-      case 3:
+      case 2:
         driveSparkMax = new CANSparkMax(6, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(7, MotorType.kBrushless);
         turnAbsoluteEncoder = new CANcoder(4, "can");

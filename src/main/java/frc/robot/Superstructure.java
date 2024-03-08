@@ -74,7 +74,7 @@ public class Superstructure extends SubsystemBase {
 
   private final PathPlannerPath fromStartingMiddleToMiddle3 =
       PathPlannerPath.fromChoreoTrajectory("fromStartingMiddleToMiddle3");
-  @AutoLogOutput private State state = State.SYSID;
+  @AutoLogOutput private State state = State.TESTING;
   @AutoLogOutput private State.RangeStatus rangeStatus = State.RangeStatus.OUTSIDE_RANGE;
   private final TimeOfFlight shooterSensor = new TimeOfFlight(12);
   private final LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
@@ -103,10 +103,12 @@ public class Superstructure extends SubsystemBase {
 
         intake.on();
         indexer.setState(IndexerIO.State.FLAT);
+        shooter.spinUp();
       }
 
       case HAS_NOTE -> {
         intake.off();
+        shooter.spinUp();
         switch (rangeStatus) {
           case IN_RANGE -> indexer.setState(IndexerIO.State.ADJUSTING);
           case OUTSIDE_RANGE -> indexer.setState(IndexerIO.State.IDLE);
@@ -116,6 +118,8 @@ public class Superstructure extends SubsystemBase {
       case SHO0TING -> {
         switch (rangeStatus) {
           case IN_RANGE -> {
+            shooter.spinUp();
+            indexer.setState(IndexerIO.State.ADJUSTING);
             swerve.faceSpeaker().schedule();
             if (shooter.ready() && indexer.ready() && swerve.ready()) shooter.shoot();
           }
@@ -141,8 +145,13 @@ public class Superstructure extends SubsystemBase {
       }
 
       case SYSID -> {
-        // chill down
+        shooter.sysId();
+        indexer.sysId();
+      }
 
+      case AMP -> {
+        indexer.setState(IndexerIO.State.AMP);
+        shooter.amp();
       }
     }
 
@@ -328,12 +337,16 @@ public class Superstructure extends SubsystemBase {
     return AutoBuilder.followPath(fromStartingMiddleToMiddle3);
   }
 
+  public Command amp() {
+    return runOnce(() -> state = State.AMP);
+  }
+
   private enum State {
     NO_NOTE,
     HAS_NOTE,
     SHO0TING,
     TESTING,
-    SYSID;
+    SYSID, AMP;
 
     private enum RangeStatus {
       IN_RANGE,

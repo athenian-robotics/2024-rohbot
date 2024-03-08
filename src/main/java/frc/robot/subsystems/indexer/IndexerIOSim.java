@@ -140,7 +140,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
 
   @Override
   public void updateInputs(IndexerIOInputs inputs) {
-    inputs.angle = getAngle();
+    inputs.angle = getAngle().baseUnitMagnitude();
     inputs.appliedVoltage = getVoltage();
     inputs.state = state;
   }

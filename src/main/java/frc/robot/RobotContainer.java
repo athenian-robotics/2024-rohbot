@@ -31,13 +31,13 @@ public class RobotContainer {
   private static final Thrustmaster leftThrustmaster = new Thrustmaster(0);
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
 
-  public static boolean INTAKE_SENSOR_TRIGGERED;
+  private static final Thrustmaster opThrustmaster = new Thrustmaster(2);
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
   private Intake intake = null;
   private Shooter shooter = null;
   private Indexer indexer = null;
-  private Drive drivebase = null;
-  private Superstructure superstructure = null;
+  private final Drive drivebase;
+  private final Superstructure superstructure;
 
   public RobotContainer() {
     switch (Constants.currentMode) {
@@ -85,9 +85,9 @@ public class RobotContainer {
         superstructure = new Superstructure(intake, indexer, shooter, drivebase, shooterDataTable);
         drivebase.setDefaultCommand(
             drivebase.joystickDrive(
-                () -> -leftThrustmaster.getY(),
-                () -> -leftThrustmaster.getX(),
-                () -> -rightThrustmaster.getX()));
+                rightThrustmaster::getY,
+                () -> -rightThrustmaster.getX(),
+                () -> leftThrustmaster.getX()));
         configureBindings();
 
         //    autoChooser.addOption("Top with amp", superstructure.fromTopWithAmp());
@@ -141,15 +141,20 @@ public class RobotContainer {
 
   private void configureBindings() {
     rightThrustmaster
-        .getButton(Thrustmaster.Button.TRIGGER)
+        .getButton(Thrustmaster.Button.BOTTOM)
         .onTrue(
             runOnce(
                 () ->
                     drivebase.setPose(
                         new Pose2d(drivebase.getPose().getTranslation(), new Rotation2d()))));
-    leftThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shoot());
+    leftThrustmaster
+            .getButton(Thrustmaster.Button.TRIGGER)
+            .onTrue(superstructure.amp());
 
-    leftThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(shooter.sysId());
+
+//    leftThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(shooter.sysId());
+//    rightThrustmaster.getButton(Thrustmaster.Button.RIGHT).onTrue(indexer.sysId());
+//    rightThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(indexer.zero());
   }
 
   public Command getAutonomousCommand() {

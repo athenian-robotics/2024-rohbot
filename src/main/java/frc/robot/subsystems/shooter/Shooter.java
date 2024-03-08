@@ -37,4 +37,8 @@ public class Shooter extends SubsystemBase {
   public boolean ready() {
     return io.ready();
   }
+
+  public void amp() {
+    io.amp();
+  }
 }
