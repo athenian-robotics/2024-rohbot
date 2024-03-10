@@ -10,7 +10,7 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
   private static final int FOLLOW_MOTOR_ID = 10;
   private static final double EMPTY_THRESHOLD = 680;
   private static final double HAS_NOTE_THRESHOLD = 375;
-  private static final int CURRENT_LIMIT = 10;
+  private static final int CURRENT_LIMIT = 5;
   private final TalonFX leadMotor;
   private boolean intakeOn = false;
 
@@ -33,7 +33,7 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
   @Override
   public void on() {
     intakeOn = true;
-    leadMotor.set(.4);
+    leadMotor.set(1);
   }
 
   @Override

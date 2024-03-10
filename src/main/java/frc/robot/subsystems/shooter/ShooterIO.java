@@ -26,7 +26,13 @@ public interface ShooterIO {
 
   void fixedSpeaker();
 
-  enum State {
+  default void pulse() {}
+
+    default void intake() {
+
+    }
+
+    enum State {
     SPINUP,
     SYSID,
     TESTING,
@@ -43,5 +49,7 @@ public interface ShooterIO {
     public double appliedVoltageR;
     public Measure<Velocity<Angle>> velocityL;
     public Measure<Velocity<Angle>> velocityR;
+    public boolean ready;
+    public double error;
   }
 }

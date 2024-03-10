@@ -20,7 +20,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class Superstructure extends SubsystemBase {
   private static final LoggedDashboardNumber SHOOTER_SENSOR_THRESHOLD =
-      new LoggedDashboardNumber("shooter sensor threshold", 50); // TODO: Tune
+      new LoggedDashboardNumber("shooter sensor threshold", 250); // TODO: Tune
   private static final LoggedDashboardNumber INTAKE_SENSOR_THRESHOLD =
       new LoggedDashboardNumber("intake sensor threshold", 0); // TODO: Tune
   @Getter private final Intake intake;
@@ -104,13 +104,14 @@ public class Superstructure extends SubsystemBase {
         }
 
         intake.on();
+        shooter.intake();
         indexer.setState(IndexerIO.State.FLAT);
-        shooter.spinUp();
+        // shooter.spinUp();
+        shooter.fixedSpeaker();
       }
 
       case HAS_NOTE -> {
         intake.off();
-        shooter.spinUp();
         switch (rangeStatus) {
           case IN_RANGE -> indexer.setState(IndexerIO.State.ADJUSTING);
           case OUTSIDE_RANGE -> indexer.setState(IndexerIO.State.IDLE);
@@ -160,10 +161,11 @@ public class Superstructure extends SubsystemBase {
         shooter.amp();
       }
       case FIXED_SPEAKER -> {
-        shooter.fixedSpeaker();
         if (shooter.ready()) {
           shooter.shoot();
-          state = State.NO_NOTE;
+          intake.on();
+        } else {
+          state = State.HAS_NOTE;
         }
       }
     }
@@ -188,6 +190,7 @@ public class Superstructure extends SubsystemBase {
     return runOnce(shooterEmpty() ? () -> state = State.NO_NOTE : () -> state = State.HAS_NOTE);
   }
 
+  @AutoLogOutput
   private boolean shooterEmpty() {
     return shooterSensor.getRange() > SHOOTER_SENSOR_THRESHOLD.get();
   }

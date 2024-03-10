@@ -45,4 +45,12 @@ public class Shooter extends SubsystemBase {
   public void fixedSpeaker() {
     io.fixedSpeaker();
   }
+
+  public void pulse() {
+    io.pulse();
+  }
+
+  public void intake() {
+    io.intake();
+  }
 }

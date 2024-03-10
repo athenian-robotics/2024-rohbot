@@ -34,17 +34,17 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
   private static final Measure<Per<Voltage, Velocity<Angle>>> kV = VoltsPerRadianPerSecond.of(7.48);
   private static final Measure<Per<Voltage, Velocity<Velocity<Angle>>>> kA =
       VoltsPerRadianPerSecondSquared.of(9.25);
-  private static final double MAX_ERROR = 5 * 2 * 3.14;
+  private static final double MAX_ERROR = 20;
   private static final double MAX_CONTROL_EFFORT = 8;
   private static final double MODEL_DEVIATION = 1;
   private static final double ENCODER_DEVIATION =
       (double) 1 / 2048 * 2 * 3.14; // 1 tick of built-in neo encoder with reduction
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
-  private static final int CURRENT_LIMIT = 20;
+  private static final int CURRENT_LIMIT = 5;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 3;
-  private static final double ACTIVATION_SPEED = 1; // TODO: Tune
+  private static final double ACTIVATION_SPEED = -1;
   static final double AMP_SPEED = DegreesPerSecond.of(100).in(RadiansPerSecond); // TODO: Tune
-  private static final Measure<Velocity<Angle>> FIXED_SPEAKER_SPEED = RotationsPerSecond.of(200);
+  private static final Measure<Velocity<Angle>> FIXED_SPEAKER_SPEED = RadiansPerSecond.of(500);
 
   private final Drive poseEstimator;
   private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "can");
@@ -120,6 +120,8 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
         .getConfigurator()
         .apply(new CurrentLimitsConfigs().withSupplyCurrentLimit(CURRENT_LIMIT));
 
+    driveL.setInverted(true);
+
     activation = new CANSparkMax(ACTIVATION_ID, CANSparkLowLevel.MotorType.kBrushless);
     activation.restoreFactoryDefaults();
     activation.setInverted(false);
@@ -160,7 +162,7 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
 
   @Override
   public boolean ready() {
-    return Math.abs(sysL.getError()) < MAX_ERROR && Math.abs(sysR.getError()) < MAX_ERROR;
+    return getWheelSpeedL().in(RadiansPerSecond) > 185;
   }
 
   public Command sysIdQuasistaticL(SysIdRoutine.Direction direction) {
@@ -222,23 +224,27 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
       }
       case SHOOT -> {
         if (!ready()) break;
-        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
-        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
-
-        driveL.set(sysL.getOutput());
-        driveR.set(sysR.getOutput());
+        //        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
+        //        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
+        //
+        //        driveL.set(sysL.getOutput());
+        //        driveR.set(sysR.getOutput());
+        driveL.set((double) 5 / 12);
+        driveR.set((double) 6 / 12);
         activation.set(ACTIVATION_SPEED);
       }
       case FIXED_SPEAKER -> {
         activation.set(0);
-        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
-        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
-
-        sysL.set(FIXED_SPEAKER_SPEED.in(RadiansPerSecond));
-        sysR.set(FIXED_SPEAKER_SPEED.in(RadiansPerSecond));
-
-        driveL.set(sysR.getOutput());
-        driveR.set(sysR.getOutput());
+        //        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
+        //        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
+        //
+        //        sysL.set(FIXED_SPEAKER_SPEED.in(RadiansPerSecond));
+        //        sysR.set(FIXED_SPEAKER_SPEED.in(RadiansPerSecond));
+        //
+        //        driveL.set(sysR.getOutput());
+        //        driveR.set(sysR.getOutput());
+        driveL.set((double) 5 / 12);
+        driveR.set((double) 6 / 12);
       }
       case AMP -> {
         activation.set(0);
@@ -262,11 +268,26 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
     inputs.appliedVoltageR = sysR.getOutput();
     inputs.velocityL = getWheelSpeedL();
     inputs.velocityR = getWheelSpeedR();
+    inputs.ready = ready();
+    inputs.error = sysL.getError();
   }
 
   @Override
   public void spinUp() {
-    runOnce(() -> state = SPINUP);
+    state = SPINUP;
+  }
+
+  public void pulse() {
+    runOnce(
+            () -> {
+              activation.set(ACTIVATION_SPEED);
+            })
+        .andThen(new WaitCommand(0.5))
+        .andThen(
+            () -> {
+              activation.set(0);
+            })
+        .schedule();
   }
 
   @Override
@@ -295,7 +316,7 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
 
   @Override
   public void shoot() {
-    runOnce(() -> state = SHOOT);
+    state = SHOOT;
   }
 
   @Override
