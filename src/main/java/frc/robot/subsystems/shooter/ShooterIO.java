@@ -22,14 +22,17 @@ public interface ShooterIO {
 
   void shoot();
 
-    default void amp() {}
+  default void amp() {}
 
-    enum State {
+  void fixedSpeaker();
+
+  enum State {
     SPINUP,
     SYSID,
     TESTING,
     SHOOT,
-      AMP
+    FIXED_SPEAKER,
+    AMP
   }
 
   @AutoLog

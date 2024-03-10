@@ -14,6 +14,8 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
   private final TalonFX leadMotor;
   private boolean intakeOn = false;
 
+  private boolean isInverted = true;
+
   public IntakeIOSparkMax() {
     leadMotor = new TalonFX(LEAD_MOTOR_ID, "can");
     leadMotor.setInverted(true);
@@ -31,13 +33,18 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
   @Override
   public void on() {
     intakeOn = true;
-    leadMotor.set(-1);
+    leadMotor.set(.4);
   }
 
   @Override
   public void off() {
     intakeOn = false;
     leadMotor.set(0);
+  }
+
+  public void reverse() {
+    leadMotor.setInverted(!isInverted);
+    isInverted = !isInverted;
   }
 
   @Override

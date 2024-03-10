@@ -13,7 +13,9 @@ public interface IndexerIO {
     return new PrintCommand("your dumb");
   }
 
-  boolean ready();
+  default boolean ready() {
+    return true;
+  }
 
   void periodic();
 
@@ -37,5 +39,9 @@ public interface IndexerIO {
     public double appliedVoltage;
     public State state;
     public boolean inBounds;
+    public boolean upBound;
+    public boolean lowBound;
+    public double error;
+    public double errorVelo;
   }
 }

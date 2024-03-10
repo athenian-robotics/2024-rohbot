@@ -9,6 +9,8 @@ public interface IntakeIO {
 
   default void off() {}
 
+  default void reverse() {}
+
   @AutoLog
   class IntakeIOInputs {
     public boolean on;

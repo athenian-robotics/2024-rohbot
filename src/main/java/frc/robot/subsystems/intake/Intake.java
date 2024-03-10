@@ -25,4 +25,8 @@ public class Intake extends SubsystemBase {
   public void off() {
     io.off();
   }
+
+  public void reverse() {
+    io.reverse();
+  }
 }

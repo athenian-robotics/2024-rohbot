@@ -14,12 +14,13 @@ import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
 import lombok.Getter;
 import org.littletonrobotics.junction.AutoLogOutput;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class Superstructure extends SubsystemBase {
   private static final LoggedDashboardNumber SHOOTER_SENSOR_THRESHOLD =
-      new LoggedDashboardNumber("shooter sensor threshold", 0); // TODO: Tune
+      new LoggedDashboardNumber("shooter sensor threshold", 50); // TODO: Tune
   private static final LoggedDashboardNumber INTAKE_SENSOR_THRESHOLD =
       new LoggedDashboardNumber("intake sensor threshold", 0); // TODO: Tune
   @Getter private final Intake intake;
@@ -74,11 +75,12 @@ public class Superstructure extends SubsystemBase {
 
   private final PathPlannerPath fromStartingMiddleToMiddle3 =
       PathPlannerPath.fromChoreoTrajectory("fromStartingMiddleToMiddle3");
-  @AutoLogOutput private State state = State.TESTING;
+  @AutoLogOutput private State state = State.NO_NOTE;
   @AutoLogOutput private State.RangeStatus rangeStatus = State.RangeStatus.OUTSIDE_RANGE;
   private final TimeOfFlight shooterSensor = new TimeOfFlight(12);
   private final LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
   private final LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
+  private State bufferedState = null;
 
   public Superstructure(
       Intake intake, Indexer indexer, Shooter shooter, Drive swerve, ShooterDataTable dataTable) {
@@ -90,10 +92,10 @@ public class Superstructure extends SubsystemBase {
     this.dataTable = dataTable;
   }
 
-  // TODO: test whether we can actually move notes from the intake to the hood while the hood is
-  // angled
   @Override
   public void periodic() {
+    Logger.recordOutput("sensor range", shooterSensor.getRange());
+    //    if (bufferedState == state) return;
     switch (state) {
       case NO_NOTE -> {
         if (!shooterEmpty()) {
@@ -113,6 +115,8 @@ public class Superstructure extends SubsystemBase {
           case IN_RANGE -> indexer.setState(IndexerIO.State.ADJUSTING);
           case OUTSIDE_RANGE -> indexer.setState(IndexerIO.State.IDLE);
         }
+
+        if (shooterEmpty()) state = State.NO_NOTE;
       }
 
       case SHO0TING -> {
@@ -137,21 +141,30 @@ public class Superstructure extends SubsystemBase {
         shooter.test();
         indexer.setState(IndexerIO.State.TESTING);
 
-        if (intakeOn.get()) intake.on();
-        else intake.off();
+        if (intakeOn.get()) {
+          intake.on();
+        } else intake.off();
 
         if (shoot.get()) shooter.shoot();
         else shooter.test();
       }
 
       case SYSID -> {
+        swerve.setDisable(true);
         shooter.sysId();
         indexer.sysId();
       }
 
       case AMP -> {
-        indexer.setState(IndexerIO.State.AMP);
+        //        indexer.setState(IndexerIO.State.AMP);
         shooter.amp();
+      }
+      case FIXED_SPEAKER -> {
+        shooter.fixedSpeaker();
+        if (shooter.ready()) {
+          shooter.shoot();
+          state = State.NO_NOTE;
+        }
       }
     }
 
@@ -341,12 +354,22 @@ public class Superstructure extends SubsystemBase {
     return runOnce(() -> state = State.AMP);
   }
 
+  public Command sysID() {
+    return runOnce(() -> state = State.SYSID);
+  }
+
+  public Command fixedSpeaker() {
+    return runOnce(() -> state = State.FIXED_SPEAKER);
+  }
+
   private enum State {
     NO_NOTE,
     HAS_NOTE,
     SHO0TING,
     TESTING,
-    SYSID, AMP;
+    SYSID,
+    AMP,
+    FIXED_SPEAKER;
 
     private enum RangeStatus {
       IN_RANGE,

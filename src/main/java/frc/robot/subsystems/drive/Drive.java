@@ -44,6 +44,8 @@ import frc.robot.vision.Vision;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
+import lombok.Getter;
+import lombok.Setter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -82,6 +84,7 @@ public class Drive extends SubsystemBase {
   private final SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
   private final ShooterDataTable table;
+  @Getter @Setter private boolean disable = false;
 
   public Drive(
       GyroIO gyroIO,
@@ -153,6 +156,9 @@ public class Drive extends SubsystemBase {
   }
 
   public void periodic() {
+    if (disable) {
+      return;
+    }
     odometryLock.lock(); // Prevents odometry updates while reading data
     gyroIO.updateInputs(gyroInputs);
     for (var module : modules) {
@@ -375,7 +381,6 @@ public class Drive extends SubsystemBase {
           Rotation2d linearDirection =
               new Rotation2d(xSupplier.getAsDouble(), ySupplier.getAsDouble());
           double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
-
           // Square values
           linearMagnitude = linearMagnitude * linearMagnitude;
           omega = Math.copySign(omega * omega, omega);

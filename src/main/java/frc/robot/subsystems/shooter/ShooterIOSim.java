@@ -3,6 +3,7 @@ package frc.robot.subsystems.shooter;
 import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterIO.State.*;
+import static frc.robot.subsystems.shooter.ShooterIOPhysicalLQR.AMP_SPEED;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
@@ -73,7 +74,7 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
             MAX_ERROR,
             MAX_CONTROL_EFFORT,
             MODEL_DEVIATION,
-            0,
+            0.1,
             LOOP_TIME.in(Seconds));
     sysR =
         new SimpleVelocitySystem(
@@ -83,7 +84,7 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
             MAX_ERROR,
             MAX_CONTROL_EFFORT,
             MODEL_DEVIATION,
-            0,
+            0.1,
             LOOP_TIME.in(Seconds));
     this.poseEstimator = poseEstimator;
   }
@@ -152,6 +153,17 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
         driveR.setInputVoltage(sysR.getOutput());
         activated = true;
       }
+      case AMP -> {
+        activation.set(false);
+        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
+        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
+
+        sysL.set(AMP_SPEED);
+        sysR.set(AMP_SPEED);
+
+        driveL.setInputVoltage(sysL.getOutput());
+        driveR.setInputVoltage(sysR.getOutput());
+      }
     }
   }
 
@@ -178,5 +190,15 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
   @Override
   public void shoot() {
     runOnce(() -> state = SHOOT);
+  }
+
+  @Override
+  public void amp() {
+    runOnce(() -> state = AMP);
+  }
+
+  @Override
+  public void fixedSpeaker() {
+    // TODO
   }
 }

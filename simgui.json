@@ -1,13 +1,20 @@
 {
   "NTProvider": {
     "types": {
-      "/FMSInfo": "FMSInfo"
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/VisionSystemSim-main/Sim Field": "Field2d"
     }
   },
   "NetworkTables": {
     "transitory": {
       "AdvantageKit": {
-        "indexer": {
+        "DashboardInputs": {
+          "open": true
+        },
+        "RealOutputs": {
+          "Superstructure": {
+            "open": true
+          },
           "open": true
         },
         "open": true
@@ -15,8 +22,7 @@
       "SmartDashboard": {
         "left shooter power deg": {
           "open": true
-        },
-        "open": true
+        }
       },
       "photonvision": {
         "cam": {
