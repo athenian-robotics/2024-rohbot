@@ -5,7 +5,9 @@ import static edu.wpi.first.units.Units.*;
 import com.revrobotics.CANSparkBase;
 import com.revrobotics.CANSparkFlex;
 import com.revrobotics.CANSparkLowLevel;
-import edu.wpi.first.units.*;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.Velocity;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -25,8 +27,8 @@ public class IndexerIOPhysicalFixed extends SubsystemBase implements IndexerIO {
   private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
   @Getter private State state = State.TESTING;
 
-  @Getter private double UPPER_LIMIT = 10; // 40
-  @Getter private double LOWER_LIMIT = 5;
+  @Getter private final double UPPER_LIMIT = 10; // 40
+  @Getter private final double LOWER_LIMIT = 5;
 
   public IndexerIOPhysicalFixed(final Drive poseEstimator, PowerBudgetPhysical power) {
     this.power = power;

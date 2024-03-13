@@ -46,9 +46,9 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
   private final LoggedDashboardBoolean activation =
       new LoggedDashboardBoolean("shooter activation", false);
   private final PowerBudget power;
-  @Getter private State state = SPINUP;
   private final FlywheelSim driveL;
   private final FlywheelSim driveR;
+  @Getter private State state = SPINUP;
   private boolean activated;
 
   public ShooterIOSim(ShooterDataTable table, Drive poseEstimator, PowerBudget power) {
@@ -179,26 +179,21 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
 
   @Override
   public void spinUp() {
-    runOnce(() -> state = SPINUP);
+    state = SPINUP;
   }
 
   @Override
   public void test() {
-    runOnce(() -> state = TESTING);
+    state = TESTING;
   }
 
   @Override
   public void shoot() {
-    runOnce(() -> state = SHOOT);
+    state = SHOOT;
   }
 
   @Override
   public void amp() {
-    runOnce(() -> state = AMP);
-  }
-
-  @Override
-  public void fixedSpeaker() {
-    // TODO
+    state = AMP;
   }
 }

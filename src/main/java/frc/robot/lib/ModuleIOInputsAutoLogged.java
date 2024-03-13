@@ -34,6 +34,7 @@ public class ModuleIOInputsAutoLogged extends ModuleIO.ModuleIOInputs
     absRot = table.get("AbsRot", absRot);
   }
 
+  @Override
   public ModuleIOInputsAutoLogged clone() {
     ModuleIOInputsAutoLogged copy = new ModuleIOInputsAutoLogged();
     copy.drivePositionRad = this.drivePositionRad;

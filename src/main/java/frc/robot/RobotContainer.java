@@ -11,15 +11,23 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.lib.controllers.Thrustmaster;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.indexer.Indexer;
-import frc.robot.subsystems.indexer.IndexerIOPhysicalFixed;
+import frc.robot.subsystems.indexer.IndexerIOPhysical;
+import frc.robot.subsystems.indexer.IndexerIOSim;
 import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intake.IntakeIOSparkMax;
+import frc.robot.subsystems.intake.IntakeIOFalcons;
+import frc.robot.subsystems.intake.IntakeSim;
+import frc.robot.subsystems.powerBudget.PowerBudget;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
+import frc.robot.subsystems.powerBudget.PowerBudgetSim;
 import frc.robot.subsystems.shooter.Shooter;
-import frc.robot.subsystems.shooter.ShooterIOPhysicalLQR;
-import frc.robot.vision.Vision;
-import frc.robot.vision.VisionIOPhoton;
-import frc.robot.vision.VisionIOSim;
+import frc.robot.subsystems.shooter.ShooterIOPhysicalPID;
+import frc.robot.subsystems.shooter.ShooterIOSim;
+import frc.robot.subsystems.superstructure.Superstructure;
+import frc.robot.subsystems.superstructure.SuperstructureIOPhysical;
+import frc.robot.subsystems.superstructure.SuperstructureIOSim;
+import frc.robot.subsystems.vision.Vision;
+import frc.robot.subsystems.vision.VisionIOPhoton;
+import frc.robot.subsystems.vision.VisionIOSim;
 
 public class RobotContainer {
 
@@ -28,15 +36,12 @@ public class RobotContainer {
 
   private static final Thrustmaster opThrustmaster = new Thrustmaster(2);
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
-  private Intake intake = null;
-  private Shooter shooter = null;
-  private Indexer indexer = null;
-  private final Drive drivebase;
-  private Superstructure superstructure = null;
+  private Drive drivebase;
+  private Superstructure superstructure;
 
   public RobotContainer() {
     switch (Constants.currentMode) {
-      default -> { //     TODO: Ensure to get the actual points
+      case REAL -> { //     TODO: Ensure to get the actual points
         ShooterDataTable shooterDataTable;
         Translation2d[] dummyPoints =
             new Translation2d[] {new Translation2d(), new Translation2d(), new Translation2d()};
@@ -67,29 +72,20 @@ public class RobotContainer {
                 new ModuleIOSparkMax(2),
                 new ModuleIOSparkMax(3),
                 shooterDataTable,
-                new Vision(new VisionIOPhoton())); // TODO: add shit
+                new Vision(new VisionIOPhoton()));
 
         // TODO: Remember to replace with the actual camera name
         //         noteDetector = new NoteDetector(photonCamera, poseEstimator);
-        intake = new Intake(new IntakeIOSparkMax());
+        Intake intake = new Intake(new IntakeIOFalcons());
 
         PowerBudgetPhysical power = new PowerBudgetPhysical();
-        shooter = new Shooter(new ShooterIOPhysicalLQR(shooterDataTable, drivebase, power));
-        indexer = new Indexer(new IndexerIOPhysicalFixed(drivebase, power));
+        Shooter shooter = new Shooter(new ShooterIOPhysicalPID(shooterDataTable, drivebase, power));
+        Indexer indexer = new Indexer(new IndexerIOPhysical(shooterDataTable, drivebase, power));
 
-        superstructure = new Superstructure(intake, indexer, shooter, drivebase, shooterDataTable);
-        drivebase.setDefaultCommand(
-            drivebase.joystickDrive(
-                leftThrustmaster::getY,
-                () -> leftThrustmaster.getX(),
-                () -> rightThrustmaster.getX()));
-        configureBindings();
-
-        //    autoChooser.addOption("Top with amp", superstructure.fromTopWithAmp());
-        //    autoChooser.addOption("Top with no amp", superstructure.fromTopWithoutAmp());
-        //    autoChooser.addOption("Bottom with no amp", superstructure.fromBottomWithoutAmp());
-        //    autoChooser.addOption("Middle with no amp",
-        // superstructure.fromStartingMiddleWithoutAmp());}
+        superstructure =
+            new Superstructure(
+                new SuperstructureIOPhysical(
+                    intake, indexer, shooter, drivebase, shooterDataTable));
       }
       case SIM -> {
         ShooterDataTable shooterDataTable;
@@ -125,16 +121,59 @@ public class RobotContainer {
                 shooterDataTable,
                 new Vision(new VisionIOSim()));
 
-        //        PowerBudget powerBudget = new PowerBudget(new PowerBudgetSim());
-        //        Intake intake = new Intake(new IntakeSim(powerBudget));
-        //        Indexer indexer = new Indexer(new IndexerIOSim(shooterDataTable, drivebase,
-        // powerBudget));
-        //        Shooter shooter = new Shooter(new ShooterIOSim(shooterDataTable, drivebase,
-        // powerBudget));
-        ////        superstructure = new Superstructure(intake, indexer, shooter, drivebase,
-        // shooterDataTable);
+        PowerBudget powerBudget = new PowerBudget(new PowerBudgetSim());
+        Intake intake = new Intake(new IntakeSim(powerBudget));
+        Indexer indexer = new Indexer(new IndexerIOSim(shooterDataTable, drivebase, powerBudget));
+        Shooter shooter = new Shooter(new ShooterIOSim(shooterDataTable, drivebase, powerBudget));
+        superstructure =
+            new Superstructure(
+                new SuperstructureIOSim(intake, indexer, shooter, drivebase, shooterDataTable));
+      }
+      case REPLAY -> { // this doesnt work and I have no idea how it is supposed to work
+        ShooterDataTable shooterDataTable;
+        Translation2d[] dummyPoints =
+            new Translation2d[] {new Translation2d(), new Translation2d(), new Translation2d()};
+        ShooterSpec[] dummySpecs =
+            new ShooterSpec[] {
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0)),
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0)),
+              new ShooterSpec(
+                  Units.Degrees.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.DegreesPerSecond.of(0),
+                  Units.Degrees.of(0))
+            };
+        shooterDataTable = new ShooterDataTable(dummyPoints, dummySpecs, false);
+
+        drivebase =
+            new Drive(
+                new GyroIO() {},
+                new ModuleIOSim(),
+                new ModuleIOSim(),
+                new ModuleIOSim(),
+                new ModuleIOSim(),
+                shooterDataTable,
+                new Vision(new VisionIOSim()));
+
+        PowerBudget powerBudget = new PowerBudget(new PowerBudgetSim());
+        Intake intake = new Intake(new IntakeSim(powerBudget));
+        Indexer indexer = new Indexer(new IndexerIOSim(shooterDataTable, drivebase, powerBudget));
+        Shooter shooter = new Shooter(new ShooterIOSim(shooterDataTable, drivebase, powerBudget));
+        superstructure =
+            new Superstructure(
+                new SuperstructureIOPhysical(
+                    intake, indexer, shooter, drivebase, shooterDataTable));
       }
     }
+    configureBindings();
   }
 
   private void configureBindings() {
@@ -145,41 +184,12 @@ public class RobotContainer {
                 () ->
                     drivebase.setPose(
                         new Pose2d(drivebase.getPose().getTranslation(), new Rotation2d()))));
-    //    leftThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.amp());
 
-    //    leftThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(shooter.sysId());
-    //    rightThrustmaster
-    //        .getButton(Thrustmaster.Button.RIGHT)
-    //        .onTrue(superstructure.sysID().andThen(indexer.sysId()));
-    //
-    //    rightThrustmaster
-    //        .getButton(Thrustmaster.Button.LEFT)
-    //        .onTrue(superstructure.sysID().andThen(shooter.sysId()));
+    drivebase.setDefaultCommand(
+        drivebase.joystickDrive(
+            leftThrustmaster::getY, leftThrustmaster::getX, rightThrustmaster::getX));
 
-    //
-    // opThrustmaster.getButton(Thrustmaster.Button.RIGHT_INSIDE_BOTTOM).onTrue(superstructure.amp());
-    //
-    opThrustmaster
-        .getButton(Thrustmaster.Button.RIGHT_MIDDLE_BOTTOM)
-        .onTrue(runOnce(() -> intake.on()));
-
-    opThrustmaster
-        .getButton(Thrustmaster.Button.RIGHT_OUTSIDE_BOTTOM)
-        .onTrue(runOnce(() -> intake.off()));
-
-    opThrustmaster
-        .getButton(Thrustmaster.Button.RIGHT_INSIDE_BOTTOM)
-        .onTrue(superstructure.fixedSpeaker());
-
-    opThrustmaster
-        .getButton(Thrustmaster.Button.RIGHT_OUTSIDE_TOP)
-        .onTrue(runOnce(() -> intake.reverse()));
-
-    //    opThrustmaster
-    //            .getButton(Thrustmaster.Button.LEFT_INSIDE_TOP)
-    //            .onTrue(superstructure.test().andThen(superstructure.getIndexer())); //thing;
-    //
-    //    rightThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(indexer.zero());
+    rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shoot());
   }
 
   public Command getAutonomousCommand() {

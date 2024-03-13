@@ -1,4 +1,4 @@
-package frc.robot.vision;
+package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.numbers.N1;
@@ -18,6 +18,7 @@ public class Vision extends SubsystemBase {
     inputs = new VisionIOInputsAutoLogged();
   }
 
+  @Override
   public void periodic() {
     io.updateInputs(inputs, inputs.estimate);
     Logger.processInputs("vision", inputs);

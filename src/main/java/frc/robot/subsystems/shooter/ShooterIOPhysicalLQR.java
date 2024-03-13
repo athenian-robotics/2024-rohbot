@@ -26,6 +26,7 @@ import lombok.Getter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
+  static final double AMP_SPEED = DegreesPerSecond.of(100).in(RadiansPerSecond); // TODO: Tune
   private static final int LEFT_DRIVE_ID = 7;
   private static final int RIGHT_DRIVE_ID = 8;
   private static final int ACTIVATION_ID = 14;
@@ -43,7 +44,6 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
   private static final int CURRENT_LIMIT = 5;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 3;
   private static final double ACTIVATION_SPEED = -1;
-  static final double AMP_SPEED = DegreesPerSecond.of(100).in(RadiansPerSecond); // TODO: Tune
   private static final Measure<Velocity<Angle>> FIXED_SPEAKER_SPEED = RadiansPerSecond.of(500);
 
   private final Drive poseEstimator;
@@ -224,27 +224,13 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
       }
       case SHOOT -> {
         if (!ready()) break;
-        //        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
-        //        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
-        //
-        //        driveL.set(sysL.getOutput());
-        //        driveR.set(sysR.getOutput());
-        driveL.set((double) 5 / 12);
-        driveR.set((double) 6 / 12);
+        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
+        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
+
+        driveL.set(sysL.getOutput());
+        driveR.set(sysR.getOutput());
+
         activation.set(ACTIVATION_SPEED);
-      }
-      case FIXED_SPEAKER -> {
-        activation.set(0);
-        //        sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS
-        //        sysR.update(getWheelSpeedR().in(RadiansPerSecond));
-        //
-        //        sysL.set(FIXED_SPEAKER_SPEED.in(RadiansPerSecond));
-        //        sysR.set(FIXED_SPEAKER_SPEED.in(RadiansPerSecond));
-        //
-        //        driveL.set(sysR.getOutput());
-        //        driveR.set(sysR.getOutput());
-        driveL.set((double) 5 / 12);
-        driveR.set((double) 6 / 12);
       }
       case AMP -> {
         activation.set(0);
@@ -269,7 +255,6 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
     inputs.velocityL = getWheelSpeedL();
     inputs.velocityR = getWheelSpeedR();
     inputs.ready = ready();
-    inputs.error = sysL.getError();
   }
 
   @Override
@@ -322,10 +307,5 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
   @Override
   public void amp() {
     state = AMP;
-  }
-
-  @Override
-  public void fixedSpeaker() {
-    state = State.FIXED_SPEAKER;
   }
 }

@@ -42,10 +42,6 @@ public class Shooter extends SubsystemBase {
     io.amp();
   }
 
-  public void fixedSpeaker() {
-    io.fixedSpeaker();
-  }
-
   public void pulse() {
     io.pulse();
   }

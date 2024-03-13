@@ -20,6 +20,7 @@ public class GyroIOInputsAutoLogged extends GyroIO.GyroIOInputs
     yawVelocityRadPerSec = table.get("YawVelocityRadPerSec", yawVelocityRadPerSec);
   }
 
+  @Override
   public GyroIOInputsAutoLogged clone() {
     GyroIOInputsAutoLogged copy = new GyroIOInputsAutoLogged();
     copy.connected = this.connected;

@@ -24,20 +24,16 @@ public interface ShooterIO {
 
   default void amp() {}
 
-  void fixedSpeaker();
-
   default void pulse() {}
 
-    default void intake() {
+  default void intake() {}
 
-    }
-
-    enum State {
+  enum State {
     SPINUP,
     SYSID,
     TESTING,
     SHOOT,
-    FIXED_SPEAKER,
+    INTAKE,
     AMP
   }
 
@@ -50,6 +46,9 @@ public interface ShooterIO {
     public Measure<Velocity<Angle>> velocityL;
     public Measure<Velocity<Angle>> velocityR;
     public boolean ready;
-    public double error;
+    public double errorL;
+    public double errorR;
+    public double setPointL;
+    public double setPointR;
   }
 }

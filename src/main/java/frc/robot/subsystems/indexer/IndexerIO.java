@@ -43,5 +43,6 @@ public interface IndexerIO {
     public boolean lowBound;
     public double error;
     public double errorVelo;
+    public double amps;
   }
 }

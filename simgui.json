@@ -8,16 +8,22 @@
   "NetworkTables": {
     "transitory": {
       "AdvantageKit": {
-        "DashboardInputs": {
-          "open": true
-        },
         "RealOutputs": {
           "Superstructure": {
             "open": true
           },
+          "SuperstructureIOPhysical": {
+            "open": true
+          },
+          "SwerveStates": {
+            "open": true
+          },
           "open": true
         },
-        "open": true
+        "open": true,
+        "superstructure": {
+          "open": true
+        }
       },
       "SmartDashboard": {
         "left shooter power deg": {
@@ -35,11 +41,13 @@
     }
   },
   "NetworkTables Info": {
+    "Connections": {
+      "open": true
+    },
     "Server": {
       "Publishers": {
         "open": true
-      },
-      "open": true
+      }
     },
     "visible": true
   }

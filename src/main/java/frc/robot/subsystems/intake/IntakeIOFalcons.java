@@ -5,25 +5,27 @@ import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
+public class IntakeIOFalcons extends SubsystemBase implements IntakeIO {
   private static final int LEAD_MOTOR_ID = 9;
   private static final int FOLLOW_MOTOR_ID = 10;
   private static final double EMPTY_THRESHOLD = 680;
   private static final double HAS_NOTE_THRESHOLD = 375;
   private static final int CURRENT_LIMIT = 5;
   private final TalonFX leadMotor;
+  private final TalonFX followMotor;
   private boolean intakeOn = false;
 
   private boolean isInverted = true;
 
-  public IntakeIOSparkMax() {
+  public IntakeIOFalcons() {
     leadMotor = new TalonFX(LEAD_MOTOR_ID, "can");
     leadMotor.setInverted(true);
-    TalonFX followMotor = new TalonFX(FOLLOW_MOTOR_ID, "can");
+    followMotor = new TalonFX(FOLLOW_MOTOR_ID, "can");
 
     leadMotor
         .getConfigurator()
         .apply(new CurrentLimitsConfigs().withSupplyCurrentLimit(CURRENT_LIMIT));
+
     followMotor
         .getConfigurator()
         .apply(new CurrentLimitsConfigs().withSupplyCurrentLimit(CURRENT_LIMIT));
@@ -42,13 +44,10 @@ public class IntakeIOSparkMax extends SubsystemBase implements IntakeIO {
     leadMotor.set(0);
   }
 
-  public void reverse() {
-    leadMotor.setInverted(!isInverted);
-    isInverted = !isInverted;
-  }
-
   @Override
   public void updateInputs(IntakeIOInputs inputs) {
     inputs.on = intakeOn;
+    inputs.amps =
+        leadMotor.getSupplyCurrent().getValue() + followMotor.getSupplyCurrent().getValue();
   }
 }

@@ -14,5 +14,6 @@ public interface IntakeIO {
   @AutoLog
   class IntakeIOInputs {
     public boolean on;
+    public double amps;
   }
 }

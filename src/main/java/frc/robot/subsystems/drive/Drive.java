@@ -40,7 +40,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
 import frc.robot.lib.GyroIOInputsAutoLogged;
-import frc.robot.vision.Vision;
+import frc.robot.subsystems.vision.Vision;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleSupplier;
@@ -73,7 +73,6 @@ public class Drive extends SubsystemBase {
   private final Vision vision;
   private final SwerveDriveKinematics kinematics =
       new SwerveDriveKinematics(getModuleTranslations());
-  private Rotation2d rawGyroRotation = new Rotation2d();
   private final SwerveModulePosition[] lastModulePositions = // For delta tracking
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
@@ -81,10 +80,11 @@ public class Drive extends SubsystemBase {
         new SwerveModulePosition(),
         new SwerveModulePosition()
       };
+  private final ShooterDataTable table;
+  private Rotation2d rawGyroRotation = new Rotation2d();
   private final SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, new Pose2d());
-  private final ShooterDataTable table;
-  @Getter @Setter private boolean disable = false;
+  @Getter @Setter private boolean disable = false; // dangerous >_<
 
   public Drive(
       GyroIO gyroIO,
@@ -118,14 +118,10 @@ public class Drive extends SubsystemBase {
                 && DriverStation.getAlliance().get() == Alliance.Red,
         this);
     PathPlannerLogging.setLogActivePathCallback(
-        (activePath) -> {
-          Logger.recordOutput(
-              "Odometry/Trajectory", activePath.toArray(new Pose2d[activePath.size()]));
-        });
+        (activePath) ->
+            Logger.recordOutput("Odometry/Trajectory", activePath.toArray(new Pose2d[0])));
     PathPlannerLogging.setLogTargetPoseCallback(
-        (targetPose) -> {
-          Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
-        });
+        (targetPose) -> Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose));
 
     // Configure SysId
     sysId =
@@ -155,6 +151,7 @@ public class Drive extends SubsystemBase {
     };
   }
 
+  @Override
   public void periodic() {
     if (disable) {
       return;
@@ -385,7 +382,7 @@ public class Drive extends SubsystemBase {
           linearMagnitude = linearMagnitude * linearMagnitude;
           omega = Math.copySign(omega * omega, omega);
 
-          // Calcaulate new linear velocity
+          // Calculate new linear velocity
           Translation2d linearVelocity =
               new Pose2d(new Translation2d(), linearDirection)
                   .transformBy(new Transform2d(linearMagnitude, 0.0, new Rotation2d()))

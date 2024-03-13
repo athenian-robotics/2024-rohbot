@@ -1,4 +1,4 @@
-package frc.robot.vision;
+package frc.robot.subsystems.vision;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
@@ -24,11 +24,10 @@ import org.photonvision.targeting.PhotonPipelineResult;
 public class VisionIOSim implements VisionIO {
   private final PhotonCamera camera;
   private final PhotonPoseEstimator photonEstimator;
-  private double lastEstTimestamp = 0;
-
   // Simulation
   private final PhotonCameraSim cameraSim;
   private final VisionSystemSim visionSim;
+  private double lastEstTimestamp = 0;
 
   public VisionIOSim() {
     camera = new PhotonCamera("cam");
