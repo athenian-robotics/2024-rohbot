@@ -21,7 +21,7 @@ public class SuperstructureIOSim implements SuperstructureIO {
   private final Shooter shooter;
   private final Drive poseEstimator;
   private final ShooterDataTable dataTable;
-  private State state;
+  private State state = new State(NO_NOTE, OUTSIDE_RANGE);
   private LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
   private LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
   private LoggedDashboardNumber sensorRange = new LoggedDashboardNumber("sensor range", 0);
