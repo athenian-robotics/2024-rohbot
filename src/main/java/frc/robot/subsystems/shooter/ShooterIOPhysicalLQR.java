@@ -43,7 +43,7 @@ public class ShooterIOPhysicalLQR extends SubsystemBase implements ShooterIO {
   private static final Measure<Time> LOOP_TIME = Second.of(0.02);
   private static final int CURRENT_LIMIT = 5;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 3;
-  private static final double ACTIVATION_SPEED = -1;
+  private static final double ACTIVATION_SPEED = 1;
   private static final Measure<Velocity<Angle>> FIXED_SPEAKER_SPEED = RadiansPerSecond.of(500);
 
   private final Drive poseEstimator;

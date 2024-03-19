@@ -197,6 +197,9 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
     inputs.lowBound = lowerBound();
     inputs.error = Rotations.of(loop.getError(0)).in(Degrees);
     inputs.errorVelo = RotationsPerSecond.of(loop.getError(1)).in(DegreesPerSecond);
+    inputs.hasCurrent =
+        power.hasCurrent(
+            leadMotor.getOutputCurrent() + followMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT);
   }
 
   private Measure<Velocity<Angle>> getVelocity() {
@@ -231,6 +234,7 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
     return leadMotor.getEncoder().getPosition() > LOWER_LIMIT;
   }
 
+  @Override
   public boolean ready() {
     return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Rotations)
         && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(RotationsPerSecond);

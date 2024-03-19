@@ -153,6 +153,7 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
         driveR.setInputVoltage(sysR.getOutput());
         activated = true;
       }
+      case INTAKE -> {}
       case AMP -> {
         activation.set(false);
         sysL.update(getWheelSpeedL().in(RadiansPerSecond)); // Returns RPS

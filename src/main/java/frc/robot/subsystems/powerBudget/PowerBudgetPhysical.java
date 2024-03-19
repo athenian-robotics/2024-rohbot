@@ -16,6 +16,7 @@ public class PowerBudgetPhysical implements PowerBudgetIO {
 
   // currentlyUsing is the current being used by the mechanism, wantToUse is the max current/total
   // current the mechanism wants to use
+  @Override
   public boolean hasCurrent(double currentlyUsing, double wantToUse) {
     return pdh.getTotalCurrent() - currentlyUsing < LIMIT - wantToUse;
   }

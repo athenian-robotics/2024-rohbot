@@ -13,7 +13,6 @@ import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.shooter.Shooter;
-import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.networktables.LoggedDashboardBoolean;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
@@ -29,7 +28,8 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
   private final TimeOfFlight shooterSensor = new TimeOfFlight(12);
   private final LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
   private final LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
-  @AutoLogOutput private State state = new State(NO_NOTE, OUTSIDE_RANGE);
+  private State state = new State(TESTING, OUTSIDE_RANGE);
+  private boolean latch; // icky shared state... i hate java
 
   public SuperstructureIOPhysical(
       Intake intake, Indexer indexer, Shooter shooter, Drive swerve, ShooterDataTable dataTable) {
@@ -39,6 +39,8 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
     this.swerve = swerve;
     this.poseEstimator = swerve;
     this.dataTable = dataTable;
+
+    latch = state.subsystemState() == TESTING || state.subsystemState() == SYSID;
   }
 
   @Override
@@ -51,13 +53,17 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
                 ? IN_RANGE
                 : OUTSIDE_RANGE);
 
-    if (shooterEmpty()) state = state.changeSubsystemState(NO_NOTE);
-    if (!shooterEmpty() && state.state() == NO_NOTE) state = state.changeSubsystemState(HAS_NOTE);
+    if (!latch) { // cuh like we dont wanna change the jawn if we are chilling in testing or sysid
+      if (shooterEmpty()) state = state.changeSubsystemState(NO_NOTE);
+      if (!shooterEmpty() && state.subsystemState() == NO_NOTE)
+        state = state.changeSubsystemState(HAS_NOTE);
+    }
 
-    if (state == bufferedState)
-      return; // preserve looptime by not running the state machine if the state hasn't changed
+    if (state.equals(bufferedState))
+      return; // preserve looptime by not running the subsystemState machine if the subsystemState
+    // hasn't changed
 
-    switch (state.state()) {
+    switch (state.subsystemState()) {
       case NO_NOTE -> {
         intake.on();
         shooter.intake();
@@ -90,10 +96,8 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
         shooter.test();
         indexer.setState(IndexerIO.State.TESTING);
 
-        if (intakeOn.get()) {
-          intake.on();
-        } else intake.off();
-
+        if (intakeOn.get()) intake.on();
+        else intake.off();
         if (shoot.get()) shooter.shoot();
         else shooter.test();
       }
@@ -112,22 +116,34 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
 
   @Override
   public Command shoot() {
-    return runOnce(() -> state = state.changeSubsystemState(SHOOTING))
+    return runOnce(
+            () -> {
+              latch = false;
+              state = state.changeSubsystemState(SHOOTING);
+            })
         .onlyIf(() -> !shooterEmpty())
         .onlyIf(() -> state.rangeState() == IN_RANGE);
   }
 
   @Override
   public Command test() {
-    return runOnce(() -> state = state.changeSubsystemState(TESTING));
+    return runOnce(
+        () -> {
+          latch = true;
+          state = state.changeSubsystemState(TESTING);
+        });
   }
 
   @Override
   public Command cancelShot() {
     return runOnce(
-        shooterEmpty()
-            ? () -> state = state.changeSubsystemState(NO_NOTE)
-            : () -> state = state.changeSubsystemState(HAS_NOTE));
+        () -> {
+          latch = false;
+          state =
+              shooterEmpty()
+                  ? state.changeSubsystemState(NO_NOTE)
+                  : state.changeSubsystemState(HAS_NOTE);
+        });
   }
 
   private boolean shooterEmpty() {
@@ -139,6 +155,7 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
     inputs.sensorRange = shooterSensor.getRange();
     inputs.shooterEmpty = shooterEmpty();
     inputs.state = state;
+    inputs.stateString = state.toString();
   }
 
   // private Command onTheFlyRobotToNote() {
@@ -166,10 +183,18 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
   // }
 
   public Command amp() {
-    return runOnce(() -> state = state.changeSubsystemState(AMP));
+    return runOnce(
+        () -> {
+          latch = false;
+          state = state.changeSubsystemState(AMP);
+        });
   }
 
   public Command sysID() {
-    return runOnce(() -> state = state.changeSubsystemState(SYSID));
+    return runOnce(
+        () -> {
+          latch = true;
+          state = state.changeSubsystemState(SYSID);
+        });
   }
 }

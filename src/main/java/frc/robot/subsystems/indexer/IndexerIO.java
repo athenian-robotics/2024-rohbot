@@ -44,5 +44,6 @@ public interface IndexerIO {
     public double error;
     public double errorVelo;
     public double amps;
+    public boolean hasCurrent;
   }
 }

@@ -21,7 +21,7 @@ public class SuperstructureIOSim implements SuperstructureIO {
   private final Shooter shooter;
   private final Drive poseEstimator;
   private final ShooterDataTable dataTable;
-  private State state;
+  private State state = new State(NO_NOTE, OUTSIDE_RANGE);
   private LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
   private LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
   private LoggedDashboardNumber sensorRange = new LoggedDashboardNumber("sensor range", 0);
@@ -48,12 +48,14 @@ public class SuperstructureIOSim implements SuperstructureIO {
                 : OUTSIDE_RANGE);
 
     if (shooterEmpty()) state = state.changeSubsystemState(NO_NOTE);
-    if (!shooterEmpty() && state.state() == NO_NOTE) state = state.changeSubsystemState(HAS_NOTE);
+    if (!shooterEmpty() && state.subsystemState() == NO_NOTE)
+      state = state.changeSubsystemState(HAS_NOTE);
 
-    if (state == bufferedState)
-      return; // preserve looptime by not running the state machine if the state hasn't changed
+    if (state.equals(bufferedState))
+      return; // preserve looptime by not running the subsystemState machine if the subsystemState
+    // hasn't changed
 
-    switch (state.state()) {
+    switch (state.subsystemState()) {
       case NO_NOTE -> {
         intake.on();
         shooter.intake();

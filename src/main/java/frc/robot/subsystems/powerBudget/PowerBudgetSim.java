@@ -42,6 +42,7 @@ public class PowerBudgetSim extends SubsystemBase implements PowerBudgetIO {
     return adjustedCurrentDrawAmps;
   }
 
+  @Override
   public void report(final double currentDrawAmps, final int... channels) {
     final int nChannels = channels.length;
     for (final int channel : channels) {
@@ -59,6 +60,7 @@ public class PowerBudgetSim extends SubsystemBase implements PowerBudgetIO {
     }
   }
 
+  @Override
   public void report(final double currentDrawAmps) {
     if (isDataOld) {
       this.isDataOld = false;

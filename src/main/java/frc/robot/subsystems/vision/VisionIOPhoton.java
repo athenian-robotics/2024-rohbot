@@ -35,23 +35,18 @@ public class VisionIOPhoton implements VisionIO {
 
   @Override
   public void updateInputs(VisionIOInputs inputs, Pose2d currentEstimate) {
-    //    photonEstimator.setReferencePose(currentEstimate);
-    //
-    //    var result = getLatestResult();
-    //    inputs.estimate = currentEstimate;
-    //    if (result.hasTargets()) {
-    //      photonEstimator
-    //          .update()
-    //          .ifPresent(
-    //              est -> {
-    //                inputs.estimate = est.estimatedPose.toPose2d();
-    //              });
-    //      inputs.tagCount = result.getTargets().size();
-    //      lastEstTimestamp = inputs.timestamp;
-    //    } else {
-    //      inputs.tagCount = 0;
-    //    }
-    //    inputs.timestamp = lastEstTimestamp;
+    photonEstimator.setReferencePose(currentEstimate);
+
+    var result = getLatestResult();
+    inputs.estimate = currentEstimate;
+    if (result.hasTargets()) {
+      photonEstimator.update().ifPresent(est -> inputs.estimate = est.estimatedPose.toPose2d());
+      inputs.tagCount = result.getTargets().size();
+      lastEstTimestamp = inputs.timestamp;
+    } else {
+      inputs.tagCount = 0;
+    }
+    inputs.timestamp = lastEstTimestamp;
   }
 
   public PhotonPipelineResult getLatestResult() {

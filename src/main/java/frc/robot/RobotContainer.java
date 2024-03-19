@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.lib.controllers.Thrustmaster;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.indexer.Indexer;
@@ -177,6 +178,7 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
+    // TODO: consider adding rizzed auto chooser to go between testing and match
     rightThrustmaster
         .getButton(Thrustmaster.Button.BOTTOM)
         .onTrue(
@@ -185,11 +187,30 @@ public class RobotContainer {
                     drivebase.setPose(
                         new Pose2d(drivebase.getPose().getTranslation(), new Rotation2d()))));
 
+    // chat, idea thinks im dumb...
+    //noinspection SuspiciousNameCombination
     drivebase.setDefaultCommand(
         drivebase.joystickDrive(
             leftThrustmaster::getY, leftThrustmaster::getX, rightThrustmaster::getX));
 
     rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shoot());
+
+    // TODO: these jawns should not be binded in a match
+    // bro presses on button and unrecoverably bricks the robot :skull:
+    rightThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(superstructure.test());
+
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.TRIGGER)
+        .onTrue(drivebase.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.BOTTOM)
+        .onTrue(drivebase.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.LEFT)
+        .onTrue(drivebase.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.RIGHT)
+        .onTrue(drivebase.sysIdDynamic(SysIdRoutine.Direction.kReverse));
   }
 
   public Command getAutonomousCommand() {

@@ -92,6 +92,8 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
     driveL.getConfigurator().apply(new TalonFXConfiguration());
     driveR.getConfigurator().apply(new TalonFXConfiguration());
 
+    driveL.setInverted(true);
+
     driveL
         .getConfigurator()
         .apply(new CurrentLimitsConfigs().withSupplyCurrentLimit(CURRENT_LIMIT));
@@ -101,11 +103,10 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
 
     activation = new CANSparkMax(ACTIVATION_ID, CANSparkLowLevel.MotorType.kBrushless);
     activation.restoreFactoryDefaults();
-    activation.setInverted(false);
+    activation.setInverted(true);
 
     activation2 = new CANSparkMax(ACTIVATION_ID2, CANSparkLowLevel.MotorType.kBrushless);
     activation2.restoreFactoryDefaults();
-    activation2.setInverted(false);
     activation2.follow(activation, true);
 
     activation.burnFlash();

@@ -17,6 +17,7 @@ import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.ParentDevice;
+import edu.wpi.first.wpilibj.DriverStation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -107,7 +108,7 @@ public class PhoenixOdometryThread extends Thread {
           if (signals.length > 0) BaseStatusSignal.refreshAll(signals);
         }
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        DriverStation.reportError(e.getMessage(), e.getStackTrace());
       } finally {
         signalsLock.unlock();
       }

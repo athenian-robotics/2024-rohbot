@@ -77,8 +77,8 @@ public class SparkMaxOdometryThread {
   }
 
   private void periodic() {
-    Drive.odometryLock.lock();
     double timestamp = Logger.getRealTimestamp() / 1e6;
+    Drive.odometryLock.lock();
     try {
       double[] values = new double[signals.size()];
       boolean isValid = true;

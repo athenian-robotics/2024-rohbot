@@ -4,13 +4,8 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.RPM;
 
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.units.Angle;
-import edu.wpi.first.units.Measure;
-import edu.wpi.first.units.Velocity;
 import frc.robot.lib.BarycentricInterpolation;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ShooterDataTable {
   private final BarycentricInterpolation interpolatorAngle;
@@ -63,23 +58,26 @@ public class ShooterDataTable {
     System.out.println(table.get(new Translation2d(0.5, 0.5)).get());
   }
 
+  // probs better impl
   public Optional<ShooterSpec> get(Translation2d toTarget) {
-    return Stream.of(
-            interpolatorAngle.interpolate(toTarget.getX(), toTarget.getY()).map(Degrees::of),
-            interpolatorSpeedL.interpolate(toTarget.getX(), toTarget.getY()).map(RPM::of),
-            interpolatorSpeedR.interpolate(toTarget.getX(), toTarget.getY()).map(RPM::of),
-            interpolatorOffset.interpolate(toTarget.getX(), toTarget.getY()).map(Degrees::of))
-        .collect(
-            Collectors.collectingAndThen(
-                Collectors.toList(),
-                list ->
-                    list.stream().allMatch(Optional::isPresent)
-                        ? Optional.of(
-                            new ShooterSpec(
-                                (Measure<Angle>) list.get(0).get(),
-                                (Measure<Velocity<Angle>>) list.get(1).get(),
-                                (Measure<Velocity<Angle>>) list.get(2).get(),
-                                (Measure<Angle>) list.get(3).get()))
-                        : Optional.empty()));
+    return interpolatorAngle
+        .interpolate(toTarget.getX(), toTarget.getY())
+        .map(Degrees::of)
+        .flatMap(
+            a ->
+                interpolatorSpeedL
+                    .interpolate(toTarget.getX(), toTarget.getY())
+                    .map(RPM::of)
+                    .flatMap(
+                        sl ->
+                            interpolatorSpeedR
+                                .interpolate(toTarget.getX(), toTarget.getY())
+                                .map(RPM::of)
+                                .flatMap(
+                                    sr ->
+                                        interpolatorOffset
+                                            .interpolate(toTarget.getX(), toTarget.getY())
+                                            .map(Degrees::of)
+                                            .map(o -> new ShooterSpec(a, sl, sr, o)))));
   }
 }

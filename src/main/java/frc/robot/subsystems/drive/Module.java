@@ -119,9 +119,12 @@ public class Module {
     }
   }
 
-  /** Runs the module with the specified setpoint state. Returns the optimized state. */
+  /**
+   * Runs the module with the specified setpoint subsystemState. Returns the optimized
+   * subsystemState.
+   */
   public SwerveModuleState runSetpoint(SwerveModuleState state) {
-    // Optimize state based on current angle
+    // Optimize subsystemState based on current angle
     // Controllers run in "periodic" when the setpoint is not null
     var optimizedState = SwerveModuleState.optimize(state, getAngle());
 
@@ -182,7 +185,7 @@ public class Module {
     return new SwerveModulePosition(getPositionMeters(), getAngle());
   }
 
-  /** Returns the module state (turn angle and drive velocity). */
+  /** Returns the module subsystemState (turn angle and drive velocity). */
   public SwerveModuleState getState() {
     return new SwerveModuleState(getVelocityMetersPerSec(), getAngle());
   }

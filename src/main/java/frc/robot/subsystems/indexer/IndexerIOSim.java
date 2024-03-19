@@ -22,6 +22,7 @@ import frc.robot.subsystems.powerBudget.PowerBudget;
 import lombok.Getter;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
+// TODO: make equal to indexeriophys
 public class IndexerIOSim extends SubsystemBase implements IndexerIO {
   private static final double kV = 5.26; // TODO: Sysid
   private static final double kA = 0.01; // TODO: sysid
@@ -119,8 +120,10 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
               .orElse(IDLE_ANGLE)
               .in(Units.Radians),
           0);
+      case SYSID -> {}
       case TESTING -> loop.setNextR(Degrees.of(angle.get()).in(Radians), 0);
       case IDLE -> loop.setNextR(IDLE_ANGLE.in(Radians), 0);
+      case AMP -> {}
     }
 
     if (power.hasCurrent(sim.getCurrentDrawAmps(), TOTAL_CURRENT_LIMIT)) {
@@ -145,6 +148,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
     inputs.state = state;
   }
 
+  @Override
   public boolean ready() {
     return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Units.Radians)
         && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(Units.RadiansPerSecond);

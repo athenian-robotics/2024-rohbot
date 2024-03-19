@@ -22,10 +22,11 @@ public interface SuperstructureIO {
   class SuperstructureInputs {
     double sensorRange;
     boolean shooterEmpty;
-    State state; // its loggable, but at what cost?
+    State state; // its loggable, but at what cost? also does not show up in elastic...
+    String stateString; // hack but like chill on me
   }
 
-  record State(SubsystemState state, RangeState rangeState)
+  record State(SubsystemState subsystemState, RangeState rangeState)
       implements StructSerializable, Serializable {
     public static final StateStruct struct = new StateStruct();
 
@@ -48,7 +49,7 @@ public interface SuperstructureIO {
     }
 
     State changeRangeState(RangeState newRangeState) {
-      return new State(state, newRangeState);
+      return new State(subsystemState, newRangeState);
     }
 
     private static class StateStruct implements Struct<State> {
@@ -69,9 +70,10 @@ public interface SuperstructureIO {
 
       @Override
       public String getSchema() {
-        return "SubsystemState state;RangeState rangeState";
+        return "SubsystemState subsystemState;RangeState rangeState";
       }
 
+      // ordinals are not supposed to be used like this... but idc
       @Override
       public State unpack(ByteBuffer byteBuffer) {
         SubsystemState state = SubsystemState.values()[byteBuffer.getInt()];
@@ -81,14 +83,14 @@ public interface SuperstructureIO {
 
       @Override
       public void pack(ByteBuffer byteBuffer, State state) {
-        byteBuffer.putInt(state.state.ordinal());
+        byteBuffer.putInt(state.subsystemState.ordinal());
         byteBuffer.putInt(state.rangeState.ordinal());
       }
     }
   }
 
   // testing
-  public static void main(String[] args) {
+  static void main(String[] args) {
     ByteArrayOutputStream bOut = new ByteArrayOutputStream();
     ObjectOutputStream oOut;
     try {

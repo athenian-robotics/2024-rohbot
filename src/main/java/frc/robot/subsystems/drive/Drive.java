@@ -157,11 +157,15 @@ public class Drive extends SubsystemBase {
       return;
     }
     odometryLock.lock(); // Prevents odometry updates while reading data
-    gyroIO.updateInputs(gyroInputs);
-    for (var module : modules) {
-      module.updateInputs();
+    try {
+
+      gyroIO.updateInputs(gyroInputs);
+      for (var module : modules) {
+        module.updateInputs();
+      }
+    } finally {
+      odometryLock.unlock();
     }
-    odometryLock.unlock();
     Logger.processInputs("Drive/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();
@@ -230,7 +234,7 @@ public class Drive extends SubsystemBase {
     // Send setpoints to modules
     SwerveModuleState[] optimizedSetpointStates = new SwerveModuleState[4];
     for (int i = 0; i < 4; i++) {
-      // The module returns the optimized state, useful for logging
+      // The module returns the optimized subsystemState, useful for logging
       optimizedSetpointStates[i] = modules[i].runSetpoint(setpointStates[i]);
     }
 
