@@ -16,6 +16,7 @@ import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -44,7 +45,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE =
       RotationsPerSecond.of(5);
   private static final Measure<Angle> REDUCTION_RATIO = Rotations.of(1 / ((54.0 / 22) * 60));
-  private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE = Volts.of(12);
+  private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE =
+      Volts.of(12); // TODO: consider if this is ass
   private static final Measure<Time> ROBOT_TIME_STEP = Seconds.of(0.02);
   private static final Measure<Angle> FLAT_ANGLE = Degrees.of(10);
   private static final int CURRENT_LIMIT = 30;
@@ -72,10 +74,13 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
     leadMotor.restoreFactoryDefaults();
     leadMotor.setInverted(false);
     leadMotor.setSmartCurrentLimit(CURRENT_LIMIT);
+    leadMotor.enableVoltageCompensation(12);
+
     followMotor = new CANSparkFlex(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followMotor.restoreFactoryDefaults();
     followMotor.setSmartCurrentLimit(CURRENT_LIMIT);
     followMotor.follow(leadMotor, true);
+    followMotor.enableVoltageCompensation(12);
 
     this.table = table;
 
@@ -129,6 +134,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
     leadMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
     followMotor.setIdleMode(CANSparkBase.IdleMode.kBrake);
 
+    Timer.delay(.1);
+
     leadMotor.burnFlash();
     followMotor.burnFlash();
   }
@@ -151,6 +158,13 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
 
   @Override
   public void periodic() {
+    if (!power.hasCurrent(
+            leadMotor.getOutputCurrent() + followMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)
+        || state == State.SYSID) {
+      loop.reset(VecBuilder.fill(getAngle().in(Rotations), getVelocity().in(RotationsPerSecond)));
+      return;
+    }
+
     double nextR = 0;
     switch (state) {
       case FLAT -> nextR = FLAT_ANGLE.in(Rotations);
@@ -162,22 +176,14 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
               .in(Rotations);
       case TESTING -> nextR = Degrees.of(angle.get()).in(Rotations);
       case IDLE -> IDLE_ANGLE.in(Rotations);
-      case SYSID -> {
-        return; // break so no LQR overhead adversely affecting looptime
-      }
       case AMP -> nextR = AMP_ANGLE.in(Rotations);
     }
 
     loop.setNextR(limiter.calculate(nextR), 0);
     loop.correct(VecBuilder.fill(getAngle().in(Rotations)));
-
-    if (power.hasCurrent(
-            leadMotor.getOutputCurrent() + followMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)
-        && state != State.SYSID) {
-      loop.predict(ROBOT_TIME_STEP.in(Seconds));
-      leadMotor.setVoltage(
-          loop.getU(0) + kS * Math.signum(loop.getNextR(1)) + kG * Math.cos(loop.getNextR(0)));
-    }
+    loop.predict(ROBOT_TIME_STEP.in(Seconds));
+    leadMotor.setVoltage(
+        loop.getU(0) + kS * Math.signum(loop.getNextR(1)) + kG * Math.cos(loop.getNextR(0)));
   }
 
   @Override

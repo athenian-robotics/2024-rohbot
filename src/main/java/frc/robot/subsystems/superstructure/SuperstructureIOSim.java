@@ -1,6 +1,7 @@
 package frc.robot.subsystems.superstructure;
 
 import static edu.wpi.first.wpilibj2.command.Commands.runOnce;
+import static edu.wpi.first.wpilibj2.command.Commands.waitUntil;
 import static frc.robot.subsystems.superstructure.SuperstructureIO.State.RangeState.IN_RANGE;
 import static frc.robot.subsystems.superstructure.SuperstructureIO.State.RangeState.OUTSIDE_RANGE;
 import static frc.robot.subsystems.superstructure.SuperstructureIO.State.SubsystemState.*;
@@ -137,5 +138,10 @@ public class SuperstructureIOSim implements SuperstructureIO {
     inputs.state = state;
     inputs.sensorRange = sensorRange.get();
     inputs.shooterEmpty = shooterEmpty();
+  }
+
+  @Override
+  public Command waitUntilEmpty() {
+    return waitUntil(this::shooterEmpty);
   }
 }

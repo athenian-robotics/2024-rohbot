@@ -22,6 +22,8 @@ import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
+
 import java.util.OptionalDouble;
 import java.util.Queue;
 
@@ -95,6 +97,7 @@ public class ModuleIOSparkMax implements ModuleIO {
     turnRelativeEncoder = turnSparkMax.getEncoder();
 
     turnSparkMax.setInverted(isTurnMotorInverted);
+    driveSparkMax.setInverted(true);
     driveSparkMax.setSmartCurrentLimit(40);
     turnSparkMax.setSmartCurrentLimit(30);
     driveSparkMax.enableVoltageCompensation(12.0);
@@ -138,7 +141,7 @@ public class ModuleIOSparkMax implements ModuleIO {
                     return OptionalDouble.empty();
                   }
                 });
-
+    Timer.delay(.1);
     driveSparkMax.burnFlash();
     turnSparkMax.burnFlash();
   }

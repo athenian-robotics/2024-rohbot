@@ -1,12 +1,13 @@
 package frc.robot.subsystems.superstructure;
 
-import static edu.wpi.first.wpilibj2.command.Commands.runOnce;
+import static edu.wpi.first.wpilibj2.command.Commands.*;
 import static frc.robot.subsystems.superstructure.SuperstructureIO.State.RangeState.IN_RANGE;
 import static frc.robot.subsystems.superstructure.SuperstructureIO.State.RangeState.OUTSIDE_RANGE;
 import static frc.robot.subsystems.superstructure.SuperstructureIO.State.SubsystemState.*;
 
 import com.playingwithfusion.TimeOfFlight;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.ShooterDataTable;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.indexer.Indexer;
@@ -30,6 +31,7 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
   private final LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
   private State state = new State(TESTING, OUTSIDE_RANGE);
   private boolean latch; // icky shared state... i hate java
+  private boolean firstRun = false;
 
   public SuperstructureIOPhysical(
       Intake intake, Indexer indexer, Shooter shooter, Drive swerve, ShooterDataTable dataTable) {
@@ -59,7 +61,7 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
         state = state.changeSubsystemState(HAS_NOTE);
     }
 
-    if (state.equals(bufferedState))
+    if (state.equals(bufferedState) && !firstRun)
       return; // preserve looptime by not running the subsystemState machine if the subsystemState
     // hasn't changed
 
@@ -96,10 +98,8 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
         shooter.test();
         indexer.setState(IndexerIO.State.TESTING);
 
-        if (intakeOn.get()) intake.on();
-        else intake.off();
-        if (shoot.get()) shooter.shoot();
-        else shooter.test();
+        new Trigger(intakeOn::get).onTrue(runOnce(intake::on));
+        new Trigger(intakeOn::get).onFalse(runOnce(intake::off));
       }
       case SYSID -> {
         swerve.setDisable(
@@ -112,6 +112,8 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
         shooter.amp();
       }
     }
+
+    firstRun = true;
   }
 
   @Override
@@ -156,6 +158,11 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
     inputs.shooterEmpty = shooterEmpty();
     inputs.state = state;
     inputs.stateString = state.toString();
+  }
+
+  @Override
+  public Command waitUntilEmpty() {
+    return waitUntil(this::shooterEmpty);
   }
 
   // private Command onTheFlyRobotToNote() {

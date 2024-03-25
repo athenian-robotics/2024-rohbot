@@ -385,6 +385,7 @@ public class Drive extends SubsystemBase {
           // Square values
           linearMagnitude = linearMagnitude * linearMagnitude;
           omega = Math.copySign(omega * omega, omega);
+          omega = -omega; // left is negative joystick but CW, unintutive
 
           // Calculate new linear velocity
           Translation2d linearVelocity =

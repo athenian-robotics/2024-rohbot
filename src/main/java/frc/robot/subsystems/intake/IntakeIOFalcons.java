@@ -35,7 +35,7 @@ public class IntakeIOFalcons extends SubsystemBase implements IntakeIO {
   @Override
   public void on() {
     intakeOn = true;
-    leadMotor.set(1);
+    leadMotor.set(.5);
   }
 
   @Override

@@ -30,4 +30,8 @@ public class Superstructure extends SubsystemBase {
   public Command cancelShot() {
     return superstructureIO.cancelShot();
   }
+
+  public Command waitUntilEmpty() {
+    return superstructureIO.waitUntilEmpty();
+  }
 }

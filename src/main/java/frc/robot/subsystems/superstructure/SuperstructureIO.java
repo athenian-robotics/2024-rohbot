@@ -18,6 +18,8 @@ public interface SuperstructureIO {
 
   void updateInputs(SuperstructureInputs inputs);
 
+  Command waitUntilEmpty();
+
   @AutoLog
   class SuperstructureInputs {
     double sensorRange;

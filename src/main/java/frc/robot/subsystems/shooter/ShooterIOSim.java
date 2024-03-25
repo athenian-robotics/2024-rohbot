@@ -3,7 +3,6 @@ package frc.robot.subsystems.shooter;
 import static edu.wpi.first.units.MutableMeasure.mutable;
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.shooter.ShooterIO.State.*;
-import static frc.robot.subsystems.shooter.ShooterIOPhysicalLQR.AMP_SPEED;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
@@ -50,6 +49,7 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
   private final FlywheelSim driveR;
   @Getter private State state = SPINUP;
   private boolean activated;
+  private final double AMP_SPEED = 100;
 
   public ShooterIOSim(ShooterDataTable table, Drive poseEstimator, PowerBudget power) {
 

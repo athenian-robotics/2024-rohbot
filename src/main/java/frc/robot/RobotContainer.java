@@ -2,11 +2,15 @@ package frc.robot;
 
 import static edu.wpi.first.wpilibj2.command.Commands.runOnce;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.lib.controllers.Thrustmaster;
@@ -29,6 +33,7 @@ import frc.robot.subsystems.superstructure.SuperstructureIOSim;
 import frc.robot.subsystems.vision.Vision;
 import frc.robot.subsystems.vision.VisionIOPhoton;
 import frc.robot.subsystems.vision.VisionIOSim;
+import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 public class RobotContainer {
 
@@ -36,9 +41,9 @@ public class RobotContainer {
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
 
   private static final Thrustmaster opThrustmaster = new Thrustmaster(2);
-  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
   private Drive drivebase;
   private Superstructure superstructure;
+  private final LoggedDashboardChooser<Command> autoChooser;
 
   public RobotContainer() {
     switch (Constants.currentMode) {
@@ -174,6 +179,12 @@ public class RobotContainer {
                     intake, indexer, shooter, drivebase, shooterDataTable));
       }
     }
+
+    NamedCommands.registerCommand(
+        "shoot", superstructure.shoot().alongWith(superstructure.waitUntilEmpty()));
+    autoChooser = new LoggedDashboardChooser<>("auto chooser", AutoBuilder.buildAutoChooser());
+    var fourNote = PathPlannerPath.fromChoreoTrajectory("4note");
+    autoChooser.addOption("4note", AutoBuilder.followPath(fourNote));
     configureBindings();
   }
 
@@ -191,7 +202,7 @@ public class RobotContainer {
     //noinspection SuspiciousNameCombination
     drivebase.setDefaultCommand(
         drivebase.joystickDrive(
-            leftThrustmaster::getY, leftThrustmaster::getX, rightThrustmaster::getX));
+            () -> -leftThrustmaster.getY(), leftThrustmaster::getX, rightThrustmaster::getX));
 
     rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shoot());
 
@@ -211,9 +222,21 @@ public class RobotContainer {
     leftThrustmaster
         .getButton(Thrustmaster.Button.RIGHT)
         .onTrue(drivebase.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+
+    rightThrustmaster
+        .getButton(Thrustmaster.Button.BOTTOM)
+        .onTrue(
+            AutoBuilder.pathfindToPose(
+                drivebase
+                    .getPose()
+                    .plus(
+                        new Transform2d(
+                            new Translation2d(Units.Feet.of(1).in(Units.Meters), 0),
+                            new Rotation2d(0))),
+                new PathConstraints(6, 6, 100, 100)));
   }
 
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
+    return autoChooser.get();
   }
 }
