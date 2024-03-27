@@ -23,6 +23,10 @@ public class Superstructure extends SubsystemBase {
     return superstructureIO.shoot();
   }
 
+  public Command amp() {
+    return superstructureIO.amp();
+  }
+
   public Command test() {
     return superstructureIO.test();
   }
@@ -33,5 +37,9 @@ public class Superstructure extends SubsystemBase {
 
   public Command waitUntilEmpty() {
     return superstructureIO.waitUntilEmpty();
+  }
+
+  public Command sysId() {
+    return superstructureIO.sysId();
   }
 }

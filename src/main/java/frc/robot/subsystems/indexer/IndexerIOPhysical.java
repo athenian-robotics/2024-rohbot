@@ -16,6 +16,7 @@ import edu.wpi.first.math.system.LinearSystem;
 import edu.wpi.first.math.system.LinearSystemLoop;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.units.*;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -34,26 +35,27 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   private static final int LEAD_ANGLE_MOTOR_ID = 10;
   private static final int FOLLOW_ANGLE_MOTOR_ID = 11;
-  private static final double kV = 12.335;
-  private static final double kA = 0.91085;
-  private static final double kS = 1.0203;
-  private static final double kG = 1.71;
-  private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = Rotations.of(100);
-  private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = Degrees.of(2);
+  private static final double kV = 13.3;
+  private static final double kA = 1.3738;
+  private static final double kS = 0.6971;
+  private static final double kG = 0.6326;
+  private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = Rotations.of(10000);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_STANDARD_DEVIATION =
-      RotationsPerSecond.of(5);
+      RotationsPerSecond.of(1000);
+
+  private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = Degrees.of(2);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE =
-      RotationsPerSecond.of(5);
+      DegreesPerSecond.of(1000);
   private static final Measure<Angle> REDUCTION_RATIO = Rotations.of(1 / ((54.0 / 22) * 60));
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE =
-      Volts.of(12); // TODO: consider if this is ass
+      Volts.of(10); // TODO: consider if this is ass
   private static final Measure<Time> ROBOT_TIME_STEP = Seconds.of(0.02);
   private static final Measure<Angle> FLAT_ANGLE = Degrees.of(10);
   private static final int CURRENT_LIMIT = 30;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
   private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
-  private static final Measure<Angle> AMP_ANGLE = Degrees.of(95); // TODO: tune
-
+  private static final Measure<Angle> AMP_ANGLE = Degrees.of(80); // snmTODO: tune
+  private static final Measure<Angle> PULSE_ANGLE = Degrees.of(11);
   private final Drive poseEstimator;
   private final CANSparkFlex leadMotor;
   private final LinearSystemLoop<N2, N1, N1> loop;
@@ -62,8 +64,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   private final PowerBudgetPhysical power;
   private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
   private final SysIdRoutine routine;
-  private final SlewRateLimiter limiter = new SlewRateLimiter((double) 3 / 4); // rot / s
-  @Getter private final double UPPER_LIMIT = 10; // 40
+  private final SlewRateLimiter limiter = new SlewRateLimiter((double) 5 / 8); // rot / s
+  @Getter private final double UPPER_LIMIT = 30; // 40
   @Getter private final double LOWER_LIMIT = 5;
   @Getter private State state = State.TESTING;
 
@@ -105,6 +107,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
                 ANGLE_SPEED_ERROR_TOLERANCE.in(RotationsPerSecond)),
             VecBuilder.fill(MAX_ANGLE_MOTOR_VOLTAGE.in(Volts)),
             ROBOT_TIME_STEP.in(Seconds));
+
+    controller.latencyCompensate(sys, 0.02, 0.02);
 
     loop =
         new LinearSystemLoop<>(
@@ -160,7 +164,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   public void periodic() {
     if (!power.hasCurrent(
             leadMotor.getOutputCurrent() + followMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)
-        || state == State.SYSID) {
+        || state == State.SYSID
+        || DriverStation.isDisabled()) {
       loop.reset(VecBuilder.fill(getAngle().in(Rotations), getVelocity().in(RotationsPerSecond)));
       return;
     }
@@ -176,7 +181,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
               .in(Rotations);
       case TESTING -> nextR = Degrees.of(angle.get()).in(Rotations);
       case IDLE -> IDLE_ANGLE.in(Rotations);
-      case AMP -> nextR = AMP_ANGLE.in(Rotations);
+      case AMP_INIT -> nextR = AMP_ANGLE.in(Rotations);
+      case AMP_PULSE -> nextR = AMP_ANGLE.in(Rotations) + PULSE_ANGLE.in(Rotations);
     }
 
     loop.setNextR(limiter.calculate(nextR), 0);

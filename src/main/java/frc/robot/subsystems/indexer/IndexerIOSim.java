@@ -24,8 +24,8 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 // TODO: make equal to indexeriophys
 public class IndexerIOSim extends SubsystemBase implements IndexerIO {
-  private static final double kV = 5.26; // TODO: Sysid
-  private static final double kA = 0.01; // TODO: sysid
+  private static final double kV = 5.26;
+  private static final double kA = 0.01;
   private static final double kS = 0;
   private static final double kG = 0.09;
   private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = Degrees.of(10);
@@ -123,7 +123,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
       case SYSID -> {}
       case TESTING -> loop.setNextR(Degrees.of(angle.get()).in(Radians), 0);
       case IDLE -> loop.setNextR(IDLE_ANGLE.in(Radians), 0);
-      case AMP -> {}
+      case AMP_INIT -> {}
     }
 
     if (power.hasCurrent(sim.getCurrentDrawAmps(), TOTAL_CURRENT_LIMIT)) {

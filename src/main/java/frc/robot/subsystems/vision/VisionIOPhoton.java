@@ -30,7 +30,7 @@ public class VisionIOPhoton implements VisionIO {
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             camera,
             new Transform3d(0, 0, 0, new Rotation3d(0, 0, 0))); // TODO: chat is this rizz?
-    photonEstimator.setMultiTagFallbackStrategy(PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR);
+    photonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
   }
 
   @Override

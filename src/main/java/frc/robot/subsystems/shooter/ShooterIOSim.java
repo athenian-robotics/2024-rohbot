@@ -174,8 +174,8 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
     inputs.state = state;
     inputs.appliedVoltageL = sysL.getOutput();
     inputs.appliedVoltageR = sysR.getOutput();
-    inputs.velocityL = getWheelSpeedL();
-    inputs.velocityR = getWheelSpeedR();
+    inputs.velocityL = getWheelSpeedL().in(DegreesPerSecond);
+    inputs.velocityR = getWheelSpeedR().in(DegreesPerSecond);
   }
 
   @Override
@@ -196,5 +196,10 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
   @Override
   public void amp() {
     state = AMP;
+  }
+
+  @Override
+  public void sysIdState() {
+    state = SYSID;
   }
 }

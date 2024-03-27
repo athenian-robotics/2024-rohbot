@@ -20,6 +20,10 @@ public interface SuperstructureIO {
 
   Command waitUntilEmpty();
 
+  Command amp();
+
+  Command sysId();
+
   @AutoLog
   class SuperstructureInputs {
     double sensorRange;

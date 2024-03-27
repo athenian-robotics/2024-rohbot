@@ -32,15 +32,17 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
   private static final int RIGHT_DRIVE_ID = 8;
   private static final int ACTIVATION_ID = 14;
   private static final int ACTIVATION_ID2 = 15;
-  private static final PIDController pidL = new PIDController(6.2, 0, 0); // TODO: tune perchance
-  private static final PIDController pidR = new PIDController(12, 0, 0); // TODO: tune perchance
-  private static final SimpleMotorFeedforward feedforwardL = new SimpleMotorFeedforward(0, 0, 0);
-  private static final SimpleMotorFeedforward feedforwardR = new SimpleMotorFeedforward(0, 0, 0);
+  private static final PIDController pidL = new PIDController(1, 0, 0); // TODO: tune perchance
+  private static final PIDController pidR = new PIDController(0.01, 0, 0); // TODO: tune perchance
+  private static final SimpleMotorFeedforward feedforwardL =
+      new SimpleMotorFeedforward(0.37178, 0.12017, 0.020435);
+  private static final SimpleMotorFeedforward feedforwardR =
+      new SimpleMotorFeedforward(0.38374, 0.12137, 0.0092311);
   private static final int CURRENT_LIMIT = 10;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
   private static final double ACTIVATION_SPEED = 1; // TODO: Tune
-  private static final Measure<Velocity<Angle>> AMP_SPEED = DegreesPerSecond.of(0); // TODO: Tune
-
+  private static final Measure<Velocity<Angle>> AMP_SPEEDL = DegreesPerSecond.of(80); // TODO: Tune
+  private static final Measure<Velocity<Angle>> AMP_SPEEDR = DegreesPerSecond.of(105);
   private final Drive poseEstimator;
   private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "can");
   private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "can");
@@ -48,7 +50,6 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
   private final CANSparkMax activation2;
   private final ShooterDataTable table;
   private final MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
-  private final MutableMeasure<Velocity<Angle>> velocity = mutable(Rotations.per(Second).of(0));
   private final SysIdRoutine routineL;
   private final SysIdRoutine routineR;
   private final LoggedDashboardNumber numL =
@@ -59,15 +60,10 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
       new LoggedDashboardBoolean("activation motor toggle", false);
   private final PowerBudgetPhysical power;
   @Getter private State state = TESTING;
-  private final double MAX_ERROR = 0.1; // todo: tune
+  private final double MAX_ERROR = 3; // todo: tune
 
-  private final LoggedDashboardNumber lP = new LoggedDashboardNumber("lP", 6.5);
-  private final LoggedDashboardNumber lD = new LoggedDashboardNumber("lD", 0);
-
-  private final LoggedDashboardNumber rP = new LoggedDashboardNumber("rP", 12);
-  private final LoggedDashboardNumber rD = new LoggedDashboardNumber("rD", 0);
-  private final LoggedDashboardNumber lkS = new LoggedDashboardNumber("lKs", 0);
-  private final LoggedDashboardNumber rkS = new LoggedDashboardNumber("rKs", 0);
+  private final LoggedDashboardNumber lP = new LoggedDashboardNumber("lP", 0.1);
+  private final LoggedDashboardNumber rP = new LoggedDashboardNumber("rP", 1);
 
   public ShooterIOPhysicalPID(
       ShooterDataTable table, Drive poseEstimator, PowerBudgetPhysical power) {
@@ -115,33 +111,31 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
     activation.burnFlash();
     activation2.burnFlash();
 
-    pidL.setTolerance(0.5, 1);
-    pidR.setTolerance(0.5, 1);
+    //    pidL.setTolerance(MAX_ERROR - 1, 50);
+    //    pidR.setTolerance(MAX_ERROR - 1, 50);
     this.poseEstimator = poseEstimator;
   }
 
   private void logR(SysIdRoutineLog log) {
     log.motor("right-flywheel-motor")
         .voltage(appliedVoltage.mut_replace(driveR.getMotorVoltage().getValue(), Volts))
-        .angularVelocity(
-            velocity.mut_replace(driveR.getVelocity().getValue(), Rotations.per(Second)))
+        .angularVelocity(getWheelSpeedR())
         .angularPosition(Rotations.of(driveR.getPosition().getValue()));
   }
 
   private void logL(SysIdRoutineLog log) {
     log.motor("left-flywheel-motor")
         .voltage(appliedVoltage.mut_replace(driveL.getMotorVoltage().getValue(), Volts))
-        .angularVelocity(
-            velocity.mut_replace(driveL.getVelocity().getValue(), Rotations.per(Second)))
+        .angularVelocity(getWheelSpeedL())
         .angularPosition(Rotations.of(driveL.getPosition().getValue()));
   }
 
   private Measure<Velocity<Angle>> getWheelSpeedL() {
-    return RPM.of(driveL.getVelocity().getValue());
+    return RotationsPerSecond.of(driveL.getVelocity().getValue());
   }
 
   private Measure<Velocity<Angle>> getWheelSpeedR() {
-    return RPM.of(driveR.getVelocity().getValue());
+    return RotationsPerSecond.of(driveR.getVelocity().getValue());
   }
 
   @Override
@@ -170,16 +164,14 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
     return routineR.dynamic(direction);
   }
 
-  private double calculateLVoltage(double setpoint) {
-    return pidL.calculate(getWheelSpeedL().in(RadiansPerSecond), setpoint)
-        + lkS.get() * Math.signum(pidL.getSetpoint())
-        + feedforwardL.calculate(getWheelSpeedL().in(RadiansPerSecond), setpoint);
+  private double calculateLVoltage(Measure<Velocity<Angle>> setpoint) {
+    return pidL.calculate(getWheelSpeedL().in(RotationsPerSecond), setpoint.in(RotationsPerSecond))
+        + feedforwardL.calculate(getWheelSpeedL().in(RotationsPerSecond));
   }
 
-  private double calculateRVoltage(double setpoint) {
-    return pidR.calculate(getWheelSpeedR().in(RadiansPerSecond), setpoint)
-        + rkS.get() * Math.signum(pidR.getSetpoint())
-        + feedforwardR.calculate(getWheelSpeedR().in(RadiansPerSecond), setpoint);
+  private double calculateRVoltage(Measure<Velocity<Angle>> setpoint) {
+    return pidR.calculate(getWheelSpeedR().in(RotationsPerSecond), setpoint.in(RotationsPerSecond))
+        + feedforwardR.calculate(setpoint.in(RotationsPerSecond));
   }
 
   @Override
@@ -193,16 +185,10 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
           Optional<ShooterSpec> spec = table.get(poseEstimator.translationToSpeaker());
 
           driveL.setVoltage(
-              calculateLVoltage(
-                  spec.map(ShooterSpec::speedL)
-                      .orElse(DegreesPerSecond.of(0))
-                      .in(RadiansPerSecond)));
+              calculateLVoltage(spec.map(ShooterSpec::speedL).orElse(RotationsPerSecond.of(0))));
 
           driveR.setVoltage(
-              calculateRVoltage(
-                  spec.map(ShooterSpec::speedR)
-                      .orElse(DegreesPerSecond.of(0))
-                      .in(RadiansPerSecond)));
+              calculateRVoltage(spec.map(ShooterSpec::speedR).orElse(RotationsPerSecond.of(0))));
 
           activation.set(0);
         }
@@ -214,33 +200,25 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
         if (activationOn.get()) activation.set(ACTIVATION_SPEED);
         else activation.set(0);
 
-        driveL.setVoltage(calculateLVoltage(DegreesPerSecond.of(numL.get()).in(RadiansPerSecond)));
+        driveL.setVoltage(calculateLVoltage(RotationsPerSecond.of(numL.get())));
 
-        driveR.setVoltage(calculateRVoltage(DegreesPerSecond.of(numR.get()).in(RadiansPerSecond)));
+        driveR.setVoltage(calculateRVoltage(RotationsPerSecond.of(numR.get())));
 
-        pidL.setPID(lP.get(), 0, lD.get());
-        pidR.setPID(rP.get(), 0, rD.get());
+        pidL.setPID(lP.get(), 0, 0);
+        pidR.setPID(rP.get(), 0, 0);
       }
 
       case SHOOT -> {
         if (!ready()) break;
-
-        Optional<ShooterSpec> spec = table.get(poseEstimator.translationToSpeaker());
-
-        driveL.setVoltage(
-            spec.map(ShooterSpec::speedL).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
-        driveR.setVoltage(
-            spec.map(ShooterSpec::speedR).orElse(DegreesPerSecond.of(0)).in(RadiansPerSecond));
-
         activation.set(ACTIVATION_SPEED);
       }
       case INTAKE -> activation.set(ACTIVATION_SPEED);
       case AMP -> {
         activation.set(0);
 
-        driveL.setVoltage(calculateLVoltage(AMP_SPEED.in(RadiansPerSecond)));
+        driveL.setVoltage(calculateLVoltage(AMP_SPEEDL));
 
-        driveR.setVoltage(calculateRVoltage(AMP_SPEED.in(RadiansPerSecond)));
+        driveR.setVoltage(calculateRVoltage(AMP_SPEEDR));
       }
     }
   }
@@ -251,12 +229,12 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
     inputs.state = state;
     inputs.appliedVoltageL = driveL.getMotorVoltage().getValue();
     inputs.appliedVoltageR = driveR.getMotorVoltage().getValue();
-    inputs.velocityL = getWheelSpeedL();
-    inputs.velocityR = getWheelSpeedR();
-    inputs.errorL = pidL.getVelocityError();
-    inputs.errorR = pidR.getVelocityError();
-    inputs.setPointL = pidL.getSetpoint();
-    inputs.setPointR = pidR.getSetpoint();
+    inputs.velocityL = getWheelSpeedL().in(RotationsPerSecond);
+    inputs.velocityR = getWheelSpeedR().in(RotationsPerSecond);
+    inputs.errorL = RotationsPerSecond.of(pidL.getPositionError()).in(RotationsPerSecond);
+    inputs.errorR = RotationsPerSecond.of(pidR.getPositionError()).in(RotationsPerSecond);
+    inputs.setPointL = RotationsPerSecond.of(pidL.getSetpoint()).in(RotationsPerSecond);
+    inputs.setPointR = RotationsPerSecond.of(pidR.getSetpoint()).in(RotationsPerSecond);
     inputs.ready = ready();
   }
 
@@ -302,5 +280,10 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
   @Override
   public void intake() {
     state = INTAKE;
+  }
+
+  @Override
+  public void sysIdState() {
+    state = SYSID;
   }
 }

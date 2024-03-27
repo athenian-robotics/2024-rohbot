@@ -296,6 +296,32 @@ public class Drive extends SubsystemBase {
     return poseEstimator.getEstimatedPosition();
   }
 
+  @AutoLogOutput(key = "Odometry/fromStart")
+  public String translationToStartString() {
+    return new Translation2d().minus(getPose().getTranslation()).toString();
+  }
+
+  public Translation2d translationToStart() {
+    return new Translation2d().minus(getPose().getTranslation());
+  }
+
+  @AutoLogOutput(key = "Odometry/Offset")
+  public double offset() {
+    return getPose().getRotation().getRadians();
+  }
+
+  public Command faceStart() {
+    return AutoBuilder.pathfindToPose(
+        new Pose2d(poseEstimator.getEstimatedPosition().getTranslation(), new Rotation2d(0)),
+        new PathConstraints(
+            MAX_LINEAR_SPEED,
+            MAXIMUM_ACCELERATION.in(edu.wpi.first.units.Units.MetersPerSecondPerSecond),
+            MAX_ANGULAR_SPEED,
+            MAXIMUM_ANGULAR_ACCELERATION.in(
+                edu.wpi.first.units.Units.RadiansPerSecond.per(
+                    edu.wpi.first.units.Units.Seconds))));
+  }
+
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);

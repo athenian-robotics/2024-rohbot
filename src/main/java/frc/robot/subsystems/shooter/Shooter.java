@@ -50,4 +50,8 @@ public class Shooter extends SubsystemBase {
   public void intake() {
     io.intake();
   }
+
+  public void sysIdState() {
+    io.sysIdState();
+  }
 }

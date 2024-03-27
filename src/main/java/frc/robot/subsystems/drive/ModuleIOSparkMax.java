@@ -23,7 +23,6 @@ import com.revrobotics.RelativeEncoder;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
-
 import java.util.OptionalDouble;
 import java.util.Queue;
 

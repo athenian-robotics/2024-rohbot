@@ -41,6 +41,8 @@ public class RobotContainer {
   private static final Thrustmaster rightThrustmaster = new Thrustmaster(1);
 
   private static final Thrustmaster opThrustmaster = new Thrustmaster(2);
+  private Indexer indexer;
+  private Shooter shooter;
   private Drive drivebase;
   private Superstructure superstructure;
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -85,8 +87,8 @@ public class RobotContainer {
         Intake intake = new Intake(new IntakeIOFalcons());
 
         PowerBudgetPhysical power = new PowerBudgetPhysical();
-        Shooter shooter = new Shooter(new ShooterIOPhysicalPID(shooterDataTable, drivebase, power));
-        Indexer indexer = new Indexer(new IndexerIOPhysical(shooterDataTable, drivebase, power));
+        shooter = new Shooter(new ShooterIOPhysicalPID(shooterDataTable, drivebase, power));
+        indexer = new Indexer(new IndexerIOPhysical(shooterDataTable, drivebase, power));
 
         superstructure =
             new Superstructure(
@@ -129,8 +131,8 @@ public class RobotContainer {
 
         PowerBudget powerBudget = new PowerBudget(new PowerBudgetSim());
         Intake intake = new Intake(new IntakeSim(powerBudget));
-        Indexer indexer = new Indexer(new IndexerIOSim(shooterDataTable, drivebase, powerBudget));
-        Shooter shooter = new Shooter(new ShooterIOSim(shooterDataTable, drivebase, powerBudget));
+        indexer = new Indexer(new IndexerIOSim(shooterDataTable, drivebase, powerBudget));
+        shooter = new Shooter(new ShooterIOSim(shooterDataTable, drivebase, powerBudget));
         superstructure =
             new Superstructure(
                 new SuperstructureIOSim(intake, indexer, shooter, drivebase, shooterDataTable));
@@ -171,8 +173,8 @@ public class RobotContainer {
 
         PowerBudget powerBudget = new PowerBudget(new PowerBudgetSim());
         Intake intake = new Intake(new IntakeSim(powerBudget));
-        Indexer indexer = new Indexer(new IndexerIOSim(shooterDataTable, drivebase, powerBudget));
-        Shooter shooter = new Shooter(new ShooterIOSim(shooterDataTable, drivebase, powerBudget));
+        indexer = new Indexer(new IndexerIOSim(shooterDataTable, drivebase, powerBudget));
+        shooter = new Shooter(new ShooterIOSim(shooterDataTable, drivebase, powerBudget));
         superstructure =
             new Superstructure(
                 new SuperstructureIOPhysical(
@@ -204,8 +206,8 @@ public class RobotContainer {
         drivebase.joystickDrive(
             () -> -leftThrustmaster.getY(), leftThrustmaster::getX, rightThrustmaster::getX));
 
-    rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shoot());
-
+    rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.amp());
+    rightThrustmaster.getButton(Thrustmaster.Button.RIGHT).onTrue(superstructure.test());
     // TODO: these jawns should not be binded in a match
     // bro presses on button and unrecoverably bricks the robot :skull:
     rightThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(superstructure.test());
@@ -222,6 +224,18 @@ public class RobotContainer {
     leftThrustmaster
         .getButton(Thrustmaster.Button.RIGHT)
         .onTrue(drivebase.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+
+    rightThrustmaster
+        .getButton(Thrustmaster.Button.RIGHT_INSIDE_BOTTOM)
+        .onTrue(superstructure.sysId()./*andThen(indexer.sysId()).*/ andThen(shooter.sysId()));
+
+    rightThrustmaster
+        .getButton(Thrustmaster.Button.RIGHT_MIDDLE_BOTTOM)
+        .onTrue(superstructure.test());
+
+    rightThrustmaster
+        .getButton(Thrustmaster.Button.LEFT_INSIDE_BOTTOM)
+        .onTrue(drivebase.faceStart());
 
     rightThrustmaster
         .getButton(Thrustmaster.Button.BOTTOM)

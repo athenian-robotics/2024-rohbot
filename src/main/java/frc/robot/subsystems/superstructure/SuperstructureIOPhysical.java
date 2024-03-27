@@ -31,7 +31,8 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
   private final LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
   private State state = new State(TESTING, OUTSIDE_RANGE);
   private boolean latch; // icky shared state... i hate java
-  private boolean firstRun = false;
+  private Command command;
+  private State bufferedState;
 
   public SuperstructureIOPhysical(
       Intake intake, Indexer indexer, Shooter shooter, Drive swerve, ShooterDataTable dataTable) {
@@ -42,13 +43,22 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
     this.poseEstimator = swerve;
     this.dataTable = dataTable;
 
+    command =
+        runOnce(() -> indexer.setState(IndexerIO.State.AMP_INIT))
+            .alongWith(runOnce(shooter::amp))
+            .andThen(waitUntil(() -> indexer.ready() && shooter.ready()))
+            .andThen(
+                runOnce(() -> indexer.setState(IndexerIO.State.AMP_PULSE))
+                    .alongWith(runOnce(shooter::shoot)));
     latch = state.subsystemState() == TESTING || state.subsystemState() == SYSID;
+    if (state.subsystemState() == TESTING) {
+      new Trigger(intakeOn::get).onTrue(runOnce(intake::on));
+      new Trigger(intakeOn::get).onFalse(runOnce(intake::off));
+    }
   }
 
   @Override
   public void iterateStateMachine() {
-    State bufferedState = state;
-
     state =
         state.changeRangeState(
             dataTable.get(poseEstimator.translationToSpeaker()).isPresent()
@@ -61,7 +71,7 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
         state = state.changeSubsystemState(HAS_NOTE);
     }
 
-    if (state.equals(bufferedState) && !firstRun)
+    if (state.equals(bufferedState))
       return; // preserve looptime by not running the subsystemState machine if the subsystemState
     // hasn't changed
 
@@ -104,16 +114,15 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
       case SYSID -> {
         swerve.setDisable(
             true); // disable high frequency (high overhead) swerve odometry to reduce looptime
-        shooter.sysId();
-        indexer.sysId();
+        shooter.sysIdState();
+        indexer.setState(IndexerIO.State.SYSID);
       }
       case AMP -> {
-        indexer.setState(IndexerIO.State.AMP);
-        shooter.amp();
+        if (!command.isScheduled()) command.schedule();
       }
     }
 
-    firstRun = true;
+    bufferedState = state;
   }
 
   @Override
@@ -194,6 +203,15 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
         () -> {
           latch = false;
           state = state.changeSubsystemState(AMP);
+        });
+  }
+
+  @Override
+  public Command sysId() {
+    return runOnce(
+        () -> {
+          latch = true;
+          state = state.changeSubsystemState(SYSID);
         });
   }
 

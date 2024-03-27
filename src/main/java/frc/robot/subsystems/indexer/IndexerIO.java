@@ -29,7 +29,8 @@ public interface IndexerIO {
     IDLE,
     SYSID,
     TESTING,
-    AMP
+    AMP_INIT,
+    AMP_PULSE
   }
 
   @AutoLog

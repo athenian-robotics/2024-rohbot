@@ -7,6 +7,8 @@ import static frc.robot.subsystems.superstructure.SuperstructureIO.State.RangeSt
 import static frc.robot.subsystems.superstructure.SuperstructureIO.State.SubsystemState.*;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import frc.robot.ShooterDataTable;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.indexer.Indexer;
@@ -103,7 +105,7 @@ public class SuperstructureIOSim implements SuperstructureIO {
         indexer.sysId();
       }
       case AMP -> {
-        indexer.setState(IndexerIO.State.AMP);
+        indexer.setState(IndexerIO.State.AMP_INIT);
         shooter.amp();
       }
     }
@@ -143,5 +145,15 @@ public class SuperstructureIOSim implements SuperstructureIO {
   @Override
   public Command waitUntilEmpty() {
     return waitUntil(this::shooterEmpty);
+  }
+
+  @Override
+  public Command amp() {
+    return new PrintCommand("todo");
+  }
+
+  @Override
+  public Command sysId() {
+    return new InstantCommand();
   }
 }
