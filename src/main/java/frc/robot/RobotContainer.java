@@ -186,31 +186,31 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "shoot", superstructure.shoot().alongWith(superstructure.waitUntilEmpty()));
     autoChooser = new LoggedDashboardChooser<>("auto chooser", buildAutoChooser());
-    autoChooser.addOption("4note", getFourNote(true));
-    autoChooser.addOption("3note", getThreeNote(true));
-    autoChooser.addOption("middle to taxi", middleToTaxi());
-    autoChooser.addOption("5note", getFiveNote());
+    autoChooser.addOption("4note", fourNote(true));
+    autoChooser.addOption("3note", threeNote(true));
+    autoChooser.addOption(
+        "middle to taxi",
+        runOnce(
+            () -> {
+              return;
+            }));
+    autoChooser.addOption("5note", fiveNote());
     autoChooser.addOption(
         "1note",
-        superstructure
-            .shootFixed()
-            .andThen(
-                runOnce(
-                    () ->
-                        drivebase.setPose(
-                            fromChoreoTrajectory("middle to 2nd note to middle")
-                                .getPreviewStartingHolonomicPose()))));
+        shootAndWait()
+            .andThen(resetToStartingPose(fromChoreoTrajectory("placeholder taxi")))
+            .andThen(followPath(fromChoreoTrajectory("placeholder taxi"))));
     configureBindings();
   }
 
-  private Command getFiveNote() {
+  private Command fiveNote() {
     return sequence(
-        getFourNote(false),
+        fourNote(false),
         followPath(fromChoreoTrajectory("middle to 4th note to middle")),
         shootAndWait());
   }
 
-  private Command getThreeNote(boolean isFirstAuto) {
+  private Command threeNote(boolean isFirstAuto) {
     var firstPath = fromChoreoTrajectory("middle to 2nd note to middle");
     return sequence(
         resetToStartingPose(firstPath).onlyIf(() -> isFirstAuto),
@@ -240,10 +240,10 @@ public class RobotContainer {
                         .plus(new Transform2d(0, 0, new Rotation2d(Math.PI)))));
   }
 
-  private Command getFourNote(boolean taxi) {
+  private Command fourNote(boolean taxi) {
     var firstPath = fromChoreoTrajectory("middle to 3d note to middle");
     return sequence(
-        resetToStartingPose(firstPath), shootAndWait(), followPath(firstPath), getThreeNote(false));
+        resetToStartingPose(firstPath), shootAndWait(), followPath(firstPath), threeNote(false));
   }
 
   private Command middleToTaxi() {
