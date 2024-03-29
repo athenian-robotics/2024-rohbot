@@ -9,11 +9,17 @@ public interface IntakeIO {
 
   default void off() {}
 
-  default void reverse() {}
+  void reverse();
+
+  enum State {
+    REVERSE,
+    OFF,
+    ON
+  }
 
   @AutoLog
   class IntakeIOInputs {
-    public boolean on;
     public double amps;
+    public State state;
   }
 }

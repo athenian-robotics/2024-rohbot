@@ -28,6 +28,7 @@ import frc.robot.ShooterDataTable;
 import frc.robot.ShooterSpec;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.powerBudget.PowerBudgetPhysical;
+import java.util.function.DoubleSupplier;
 import lombok.Getter;
 import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
@@ -54,11 +55,13 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   private static final Measure<Angle> FLAT_ANGLE = Degrees.of(0);
   private static final int CURRENT_LIMIT = 30;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
-  private static final Measure<Angle> IDLE_ANGLE = Degrees.of(20);
+  private static final Measure<Angle> IDLE_ANGLE = Degrees.of(15);
   private static final Measure<Angle> AMP_ANGLE = Degrees.of(80); // snmTODO: tune
   private static final Measure<Angle> PULSE_ANGLE = Degrees.of(11);
   private static final Measure<Angle> SHOOT_FIXED_ANGLE = Degrees.of(55);
   private static final Measure<Angle> ANGLE_ALLOTED_ERROR = Degrees.of(3);
+  private static final Measure<Angle> ACROSS_FIELD_ANGLE = Degrees.of(45);
+  private static final double ANGLE_SPEED_ALLOTED_ERROR = 20;
   private final Drive poseEstimator;
   private final CANSparkFlex leadMotor;
   private final LinearSystemLoop<N2, N1, N1> loop;
@@ -67,11 +70,12 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   private final PowerBudgetPhysical power;
   private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
   private final SysIdRoutine routine;
-  private final SlewRateLimiter limiter = new SlewRateLimiter(0.06); // rot / s
+  private final SlewRateLimiter limiter = new SlewRateLimiter(1.0); // rot / s
   @Getter private final double UPPER_LIMIT = 30; // 40
   @Getter private final double LOWER_LIMIT = 5;
   @Getter private State state = State.TESTING;
   private double nextR = 0;
+  private Measure<Angle> fudge = Degrees.of(10);
 
   public IndexerIOPhysical(
       ShooterDataTable table, final Drive poseEstimator, PowerBudgetPhysical power) {
@@ -180,18 +184,22 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
       case IDLE -> nextR = IDLE_ANGLE.in(Rotations);
       case AMP_INIT -> nextR = AMP_ANGLE.in(Rotations);
       case SHOOTFIXED -> nextR = SHOOT_FIXED_ANGLE.in(Rotations);
+      case ACROSS_FIELD -> {
+        nextR = ACROSS_FIELD_ANGLE.in(Rotations);
+      }
       case AMP_PULSE -> nextR = AMP_ANGLE.in(Rotations) + PULSE_ANGLE.in(Rotations);
     }
 
-    if (!power.hasCurrent(
-            leadMotor.getOutputCurrent() + followMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)
-        || state == State.SYSID
-        || DriverStation.isDisabled()
-        || ready()) {
+    if (
+    /*!power.hasCurrent(
+        leadMotor.getOutputCurrent() + followMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)
+    ||*/ state == State.SYSID || DriverStation.isDisabled() /*|| ready()*/) {
       loop.reset(VecBuilder.fill(getAngle().in(Rotations), getVelocity().in(RotationsPerSecond)));
+      limiter.reset(nextR);
       return;
     }
 
+    nextR = nextR + fudge.in(Rotations);
     loop.setNextR(limiter.calculate(nextR), 0);
     loop.correct(VecBuilder.fill(getAngle().in(Rotations)));
     loop.predict(ROBOT_TIME_STEP.in(Seconds));
@@ -216,6 +224,7 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
     inputs.lowBound = lowerBound();
     inputs.limiterValue = limiter.lastValue();
     inputs.ready = ready();
+    inputs.nextR = nextR;
     inputs.error = Rotations.of(loop.getError(0)).in(Degrees);
     inputs.errorVelo = RotationsPerSecond.of(loop.getError(1)).in(DegreesPerSecond);
     inputs.hasCurrent =
@@ -256,9 +265,14 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   }
 
   @Override
+  public void fudge(DoubleSupplier d) {
+    fudge = fudge.times(d.getAsDouble());
+  }
+
+  @Override
   public boolean ready() {
-    return Math.abs(getAngle().minus(Rotations.of(nextR)).in(Rotations))
-            < ANGLE_ALLOTED_ERROR.in(Rotations)
-        && nextR == SHOOT_FIXED_ANGLE.in(Rotations);
+    return Math.abs(loop.getError(0)) < ANGLE_ALLOTED_ERROR.in(Rotations)
+        && nextR == SHOOT_FIXED_ANGLE.in(Rotations)
+        && Math.abs(loop.getError(1)) < ANGLE_SPEED_ALLOTED_ERROR;
   }
 }

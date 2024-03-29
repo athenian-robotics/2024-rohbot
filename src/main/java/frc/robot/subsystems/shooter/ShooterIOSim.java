@@ -43,6 +43,9 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
   private static final Measure<Velocity<Angle>> AMP_SPEEDR = DegreesPerSecond.of(105);
   private static final Measure<Velocity<Angle>> FIXED_SHOT_SPEEDR = RotationsPerSecond.of(75);
   private static final Measure<Velocity<Angle>> FIXED_SHOTE_SPEEDL = RotationsPerSecond.of(65);
+  private static final Measure<Velocity<Angle>> ACROSS_FIELD_SPEEDR = RotationsPerSecond.of(75);
+
+  private static final Measure<Velocity<Angle>> ACROSS_FIELD_SPEEDL = RotationsPerSecond.of(65);
 
   private final Drive poseEstimator;
   private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "can");
@@ -174,10 +177,10 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
           Optional<ShooterSpec> spec = table.get(poseEstimator.translationToSpeaker());
 
           driveL.setVoltage(
-              calculateLVoltage(spec.map(ShooterSpec::speedL).orElse(RotationsPerSecond.of(0))));
+              calculateLVoltage(spec.map(ShooterSpec::speedL).orElse(FIXED_SHOTE_SPEEDL)));
 
           driveR.setVoltage(
-              calculateRVoltage(spec.map(ShooterSpec::speedR).orElse(RotationsPerSecond.of(0))));
+              calculateRVoltage(spec.map(ShooterSpec::speedR).orElse(FIXED_SHOT_SPEEDR)));
 
           activation = false;
         }
@@ -199,10 +202,18 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
       case SHOOT -> {
         activation = true;
       }
+      case INTAKE -> {}
       case SHOOTFIXED -> {
         driveL.setVoltage(calculateLVoltage(FIXED_SHOT_SPEEDR));
 
         driveR.setVoltage(calculateRVoltage(FIXED_SHOTE_SPEEDL));
+
+        activation = false;
+      }
+      case SHOOT_ACROSS_FIELD -> {
+        driveL.setVoltage(calculateLVoltage(ACROSS_FIELD_SPEEDR));
+
+        driveR.setVoltage(calculateRVoltage(ACROSS_FIELD_SPEEDL));
 
         activation = false;
       }
@@ -284,5 +295,10 @@ public class ShooterIOSim extends SubsystemBase implements ShooterIO {
   @Override
   public void shootFixed() {
     state = SHOOTFIXED;
+  }
+
+  @Override
+  public void shootAcrossField() {
+    state = SHOOT_ACROSS_FIELD;
   }
 }

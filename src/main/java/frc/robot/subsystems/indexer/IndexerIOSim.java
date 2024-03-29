@@ -73,6 +73,7 @@ public class IndexerIOSim extends SubsystemBase implements IndexerIO {
     motors = DCMotor.getNeoVortex(2);
 
     LinearSystem<N2, N1, N1> sys = LinearSystemId.identifyPositionSystem(kV, kA);
+
     sim =
         new SingleJointedArmSim(
             sys,

@@ -58,4 +58,8 @@ public class Shooter extends SubsystemBase {
   public void shootFixed() {
     io.shootFixed();
   }
+
+  public void shootAcrossField() {
+    io.shootAcrossField();
+  }
 }

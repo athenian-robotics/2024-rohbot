@@ -13,7 +13,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.lib.controllers.Thrustmaster;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.indexer.Indexer;
@@ -47,6 +47,7 @@ public class RobotContainer {
   private Drive drivebase;
   private Superstructure superstructure;
   private final LoggedDashboardChooser<Command> autoChooser;
+  private Command taxiPath = new InstantCommand();
 
   public RobotContainer() {
     switch (Constants.currentMode) {
@@ -188,38 +189,40 @@ public class RobotContainer {
     autoChooser = new LoggedDashboardChooser<>("auto chooser", buildAutoChooser());
     autoChooser.addOption("4note", fourNote(true));
     autoChooser.addOption("3note", threeNote(true));
-    autoChooser.addOption(
-        "middle to taxi",
-        runOnce(
-            () -> {
-              return;
-            }));
+    autoChooser.addOption("middle to taxi", runOnce(() -> {}));
     autoChooser.addOption("5note", fiveNote());
     autoChooser.addOption(
         "1note",
-        shootAndWait()
-            .andThen(resetToStartingPose(fromChoreoTrajectory("placeholder taxi")))
-            .andThen(followPath(fromChoreoTrajectory("placeholder taxi"))));
+        sequence(
+            waitSeconds(3),
+            shootAndWait(),
+            waitSeconds(5),
+            resetToStartingPose(fromChoreoTrajectory("placeholder taxi")),
+            followPath(fromChoreoTrajectory("placeholder taxi"))));
     configureBindings();
   }
 
+  // 18.5 s we need to take 1 s to shoot
   private Command fiveNote() {
     return sequence(
-        fourNote(false),
-        followPath(fromChoreoTrajectory("middle to 4th note to middle")),
-        shootAndWait());
+        fourNote(false), // 12.3 s
+        followPath(fromChoreoTrajectory("middle to 4th note to middle")), // 4.2
+        shootAndWait()); // 2 s
   }
 
+  // 8.7 s
   private Command threeNote(boolean isFirstAuto) {
     var firstPath = fromChoreoTrajectory("middle to 2nd note to middle");
     return sequence(
         resetToStartingPose(firstPath).onlyIf(() -> isFirstAuto),
-        shootAndWait(),
+        shootAndWait(), // 2 s
         followPath(firstPath), // 1.5 s
-        shootAndWait(),
-        followPath(fromChoreoTrajectory("middle to 1st note to middle")), //
-        shootAndWait());
+        shootAndWait(), // 2 s
+        followPath(fromChoreoTrajectory("middle to 1st note to middle")), // 1.2 s
+        shootAndWait()); // 2 s
   }
+
+  // wait 3 s shoot wait 9 taxi
 
   private Command shootAndWait() {
     return superstructure
@@ -243,7 +246,10 @@ public class RobotContainer {
   private Command fourNote(boolean taxi) {
     var firstPath = fromChoreoTrajectory("middle to 3d note to middle");
     return sequence(
-        resetToStartingPose(firstPath), shootAndWait(), followPath(firstPath), threeNote(false));
+        resetToStartingPose(firstPath),
+        shootAndWait(),
+        followPath(firstPath),
+        threeNote(false)); // 2 s + 1.6 s + 8.7 s = 12.3 s
   }
 
   private Command middleToTaxi() {
@@ -273,11 +279,14 @@ public class RobotContainer {
     drivebase.setDefaultCommand(
         drivebase.joystickDrive(
             () -> -leftThrustmaster.getY(),
-            () -> -leftThrustmaster.getX(),
+            () -> leftThrustmaster.getX(),
             rightThrustmaster::getX));
 
     //    rightThrustmaster.getButton(Thrustmaster.Button.RIGHT).onTrue(superstructure.test());
     //    rightThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(superstructure.idle());
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.LEFT_INSIDE_BOTTOM)
+        .onTrue(superstructure.sysId().andThen(indexer.sysId()));
 
     /*
      *     ________   ___  ___   ________   ________   _________   ___   ________    ________
@@ -291,11 +300,17 @@ public class RobotContainer {
      */
     rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shootFixed());
     rightThrustmaster.getButton(Thrustmaster.Button.BOTTOM).onTrue(superstructure.cancelShot());
+    leftThrustmaster
+        .getButton(Thrustmaster.Button.TRIGGER)
+        .onTrue(superstructure.shootAcrossField());
+
+    // operator
+    opThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(superstructure.reverseIntake());
+    opThrustmaster.getButton(Thrustmaster.Button.RIGHT).onTrue(superstructure.idle());
+    indexer.fudge(() -> -opThrustmaster.getRawAxis(3));
   }
 
   public Command getAutonomousCommand() {
-    Command auto = autoChooser.get();
-    CommandScheduler.getInstance().removeComposedCommand(auto);
-    return auto.andThen(middleToTaxi());
+    return sequence(autoChooser.get(), taxiPath);
   }
 }

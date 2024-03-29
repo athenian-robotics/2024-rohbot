@@ -54,4 +54,16 @@ public class Superstructure extends SubsystemBase {
   public boolean noNote() {
     return superstructureIO.noNote();
   }
+
+  public Command reverseIntake() {
+    return superstructureIO.reverseIntake();
+  }
+
+  public Command shootAcrossField() {
+    return superstructureIO.shootAcrossField();
+  }
+
+  public boolean shooterIndexerReady() {
+    return superstructureIO.shooterIndexerReady();
+  }
 }

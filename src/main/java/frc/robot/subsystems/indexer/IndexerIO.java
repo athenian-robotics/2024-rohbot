@@ -2,6 +2,7 @@ package frc.robot.subsystems.indexer;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface IndexerIO {
@@ -23,6 +24,9 @@ public interface IndexerIO {
     return new PrintCommand("ur dumb");
   }
 
+  default void fudge(DoubleSupplier o) {}
+  ;
+
   enum State {
     FLAT,
     ADJUSTING,
@@ -31,6 +35,7 @@ public interface IndexerIO {
     TESTING,
     AMP_INIT,
     SHOOTFIXED,
+    ACROSS_FIELD,
     AMP_PULSE
   }
 
@@ -49,5 +54,6 @@ public interface IndexerIO {
     public boolean hasCurrent;
     public boolean ready;
     public double limiterValue;
+    public double nextR;
   }
 }

@@ -3,7 +3,7 @@ package frc.robot.subsystems.powerBudget;
 import edu.wpi.first.wpilibj.PowerDistribution;
 
 public class PowerBudgetPhysical implements PowerBudgetIO {
-  private static final double LIMIT = 100;
+  private static final double LIMIT = 230;
   private final PowerDistribution pdh = new PowerDistribution();
 
   public PowerBudgetPhysical() {}

@@ -30,6 +30,8 @@ public interface ShooterIO {
   default void shootFixed() {
     System.out.println("idot");
   }
+
+  void shootAcrossField();
   ;
 
   enum State {
@@ -39,6 +41,7 @@ public interface ShooterIO {
     SHOOT,
     INTAKE,
     SHOOTFIXED,
+    SHOOT_ACROSS_FIELD,
     AMP
   }
 

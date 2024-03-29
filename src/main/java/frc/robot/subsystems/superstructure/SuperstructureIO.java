@@ -30,6 +30,12 @@ public interface SuperstructureIO {
 
   boolean noNote();
 
+  Command reverseIntake();
+
+  Command shootAcrossField();
+
+  boolean shooterIndexerReady();
+
   @AutoLog
   class SuperstructureInputs {
     public String bufferedState;
@@ -50,6 +56,8 @@ public interface SuperstructureIO {
       TESTING,
       SYSID,
       SHOOT_FIXED,
+      REVERSE_INTAKE,
+      SHOOT_ACROSS_FIELD,
       AMP
     }
 

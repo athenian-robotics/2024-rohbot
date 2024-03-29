@@ -38,13 +38,16 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
       new SimpleMotorFeedforward(0.37178, 0.12017, 0.020435);
   private static final SimpleMotorFeedforward feedforwardR =
       new SimpleMotorFeedforward(0.38374, 0.12137, 0.0092311);
-  private static final int CURRENT_LIMIT = 10;
+  private static final int CURRENT_LIMIT = 80;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
   private static final double ACTIVATION_SPEED = 1; // TODO: Tune
   private static final Measure<Velocity<Angle>> AMP_SPEEDL = DegreesPerSecond.of(80); // TODO: Tune
   private static final Measure<Velocity<Angle>> AMP_SPEEDR = DegreesPerSecond.of(105);
   private static final Measure<Velocity<Angle>> FIXED_SHOT_SPEEDR = RotationsPerSecond.of(75);
   private static final Measure<Velocity<Angle>> FIXED_SHOTE_SPEEDL = RotationsPerSecond.of(65);
+  private static final Measure<Velocity<Angle>> ACROSS_FIELD_SPEEDR = RotationsPerSecond.of(50);
+
+  private static final Measure<Velocity<Angle>> ACROSS_FIELD_SPEEDL = RotationsPerSecond.of(40);
 
   private final Drive poseEstimator;
   private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "can");
@@ -98,10 +101,16 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
 
     driveL
         .getConfigurator()
-        .apply(new CurrentLimitsConfigs().withSupplyCurrentLimit(CURRENT_LIMIT));
+        .apply(
+            new CurrentLimitsConfigs()
+                .withSupplyCurrentLimit(CURRENT_LIMIT)
+                .withSupplyCurrentLimitEnable(true));
     driveR
         .getConfigurator()
-        .apply(new CurrentLimitsConfigs().withSupplyCurrentLimit(CURRENT_LIMIT));
+        .apply(
+            new CurrentLimitsConfigs()
+                .withSupplyCurrentLimit(CURRENT_LIMIT)
+                .withSupplyCurrentLimitEnable(true));
 
     activation = new CANSparkMax(ACTIVATION_ID, CANSparkLowLevel.MotorType.kBrushless);
     activation.restoreFactoryDefaults();
@@ -117,6 +126,9 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
     //    pidL.setTolerance(MAX_ERROR - 1, 50);
     //    pidR.setTolerance(MAX_ERROR - 1, 50);
     this.poseEstimator = poseEstimator;
+
+    pidR.setTolerance(0.5);
+    pidL.setTolerance(0.5);
   }
 
   private void logR(SysIdRoutineLog log) {
@@ -169,11 +181,13 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
   }
 
   private double calculateLVoltage(Measure<Velocity<Angle>> setpoint) {
+    if (setpoint.in(RotationsPerSecond) == 0 && pidR.atSetpoint()) return 0;
     return pidL.calculate(getWheelSpeedL().in(RotationsPerSecond), setpoint.in(RotationsPerSecond))
         + feedforwardL.calculate(getWheelSpeedL().in(RotationsPerSecond));
   }
 
   private double calculateRVoltage(Measure<Velocity<Angle>> setpoint) {
+    if (setpoint.in(RotationsPerSecond) == 0 && pidR.atSetpoint()) return 0;
     return pidR.calculate(getWheelSpeedR().in(RotationsPerSecond), setpoint.in(RotationsPerSecond))
         + feedforwardR.calculate(setpoint.in(RotationsPerSecond));
   }
@@ -186,6 +200,7 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
             driveL.getSupplyCurrent().getValue() + driveR.getSupplyCurrent().getValue(),
             TOTAL_CURRENT_LIMIT)) {
 
+          activation.set(0);
           Optional<ShooterSpec> spec = table.get(poseEstimator.translationToSpeaker());
 
           driveL.setVoltage(
@@ -193,8 +208,6 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
 
           driveR.setVoltage(
               calculateRVoltage(spec.map(ShooterSpec::speedR).orElse(RotationsPerSecond.of(0))));
-
-          activation.set(0);
         }
       }
 
@@ -212,14 +225,19 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
         pidR.setPID(rP.get(), 0, 0);
       }
 
-      case SHOOT -> {
-        activation.set(ACTIVATION_SPEED);
-      }
+      case SHOOT -> activation.set(ACTIVATION_SPEED);
       case INTAKE -> activation.set(ACTIVATION_SPEED);
       case SHOOTFIXED -> {
         driveL.setVoltage(calculateLVoltage(FIXED_SHOT_SPEEDR));
 
         driveR.setVoltage(calculateRVoltage(FIXED_SHOTE_SPEEDL));
+
+        activation.set(0);
+      }
+      case SHOOT_ACROSS_FIELD -> {
+        driveL.setVoltage(calculateLVoltage(ACROSS_FIELD_SPEEDR));
+
+        driveR.setVoltage(calculateRVoltage(ACROSS_FIELD_SPEEDL));
 
         activation.set(0);
       }
@@ -301,5 +319,10 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
   @Override
   public void shootFixed() {
     state = SHOOTFIXED;
+  }
+
+  @Override
+  public void shootAcrossField() {
+    state = SHOOT_ACROSS_FIELD;
   }
 }

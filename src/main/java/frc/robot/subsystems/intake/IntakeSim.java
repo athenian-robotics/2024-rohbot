@@ -1,10 +1,12 @@
 package frc.robot.subsystems.intake;
 
+import static frc.robot.subsystems.intake.IntakeIO.State.*;
+
 import frc.robot.subsystems.powerBudget.PowerBudget;
 
 public class IntakeSim implements IntakeIO {
-  private final PowerBudget powerBudget;
-  private boolean intakeOn = false;
+  private final PowerBudget powerBudget; // TODO: Implement
+  private State state = OFF;
 
   public IntakeSim(PowerBudget powerBudget) {
     this.powerBudget = powerBudget;
@@ -12,17 +14,22 @@ public class IntakeSim implements IntakeIO {
   }
 
   @Override
-  public void updateInputs(IntakeIOInputs inputs) {
-    inputs.on = intakeOn;
-  }
-
-  @Override
   public void on() {
-    intakeOn = true;
+    state = ON;
   }
 
   @Override
   public void off() {
-    intakeOn = false;
+    state = OFF;
+  }
+
+  @Override
+  public void reverse() {
+    state = REVERSE;
+  }
+
+  @Override
+  public void updateInputs(IntakeIOInputs inputs) {
+    inputs.state = state;
   }
 }

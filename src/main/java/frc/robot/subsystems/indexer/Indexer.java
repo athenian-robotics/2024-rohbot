@@ -2,6 +2,7 @@ package frc.robot.subsystems.indexer;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.function.DoubleSupplier;
 import org.littletonrobotics.junction.Logger;
 
 public class Indexer extends SubsystemBase {
@@ -34,5 +35,9 @@ public class Indexer extends SubsystemBase {
 
   public Command zero() {
     return io.zero();
+  }
+
+  public void fudge(DoubleSupplier o) {
+    io.fudge(o);
   }
 }

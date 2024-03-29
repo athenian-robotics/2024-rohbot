@@ -78,7 +78,6 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
     switch (state.subsystemState()) {
       case NO_NOTE -> {
         intake.on();
-        shooter.intake();
         indexer.setState(IndexerIO.State.IDLE);
         shooter.spinUp();
       }
@@ -125,6 +124,21 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
                     shooter.ready()
                         && indexer.ready()
                         && bufferedState.subsystemState() == SHOOT_FIXED)
+            .onTrue(runOnce(shooter::shoot));
+      }
+      case REVERSE_INTAKE -> {
+        intake.reverse();
+        indexer.setState(IndexerIO.State.IDLE);
+        shooter.spinUp();
+      }
+      case SHOOT_ACROSS_FIELD -> {
+        shooter.shootAcrossField();
+        indexer.setState(IndexerIO.State.ACROSS_FIELD);
+        new Trigger(
+                () ->
+                    shooter.ready()
+                        && indexer.ready()
+                        && bufferedState.subsystemState() == SHOOT_ACROSS_FIELD)
             .onTrue(runOnce(shooter::shoot));
       }
       case AMP -> {
@@ -251,5 +265,28 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
   @Override
   public boolean noNote() {
     return state.subsystemState() == NO_NOTE;
+  }
+
+  @Override
+  public Command reverseIntake() {
+    return runOnce(
+        () -> {
+          latch = false;
+          state = state.changeSubsystemState(REVERSE_INTAKE);
+        });
+  }
+
+  @Override
+  public Command shootAcrossField() {
+    return runOnce(
+        () -> {
+          latch = false;
+          state = state.changeSubsystemState(SHOOT_ACROSS_FIELD);
+        });
+  }
+
+  @Override
+  public boolean shooterIndexerReady() {
+    return indexer.ready() && shooter.ready();
   }
 }
