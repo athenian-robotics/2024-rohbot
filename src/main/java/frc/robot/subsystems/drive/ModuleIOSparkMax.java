@@ -62,25 +62,29 @@ public class ModuleIOSparkMax implements ModuleIO {
         driveSparkMax = new CANSparkMax(8, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(9, MotorType.kBrushless);
         turnAbsoluteEncoder = new CANcoder(1, "can");
-        absoluteEncoderOffset = new Rotation2d(-2.448233337); // MUST BE CALIBRATED
+        absoluteEncoderOffset =
+            new Rotation2d(-2.448233337).plus(new Rotation2d(Math.PI)); // MUST BE CALIBRATED
         break;
       case 1:
         driveSparkMax = new CANSparkMax(2, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(3, MotorType.kBrushless);
         turnAbsoluteEncoder = new CANcoder(2, "can");
-        absoluteEncoderOffset = new Rotation2d(2.0217866784); // MUST BE CALIBRATED
+        absoluteEncoderOffset =
+            new Rotation2d(2.0217866784).plus(new Rotation2d(Math.PI)); // MUST BE CALIBRATED
         break;
       case 3:
         driveSparkMax = new CANSparkMax(4, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(5, MotorType.kBrushless);
         turnAbsoluteEncoder = new CANcoder(3, "can");
-        absoluteEncoderOffset = new Rotation2d(-1.825437137); // MUST BE CALIBRATED
+        absoluteEncoderOffset =
+            new Rotation2d(-1.825437137).plus(new Rotation2d(Math.PI)); // MUST BE CALIBRATED
         break;
       case 2:
         driveSparkMax = new CANSparkMax(6, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(7, MotorType.kBrushless);
         turnAbsoluteEncoder = new CANcoder(4, "can");
-        absoluteEncoderOffset = new Rotation2d(-1.352971054); // MUST BE CALIBRATED
+        absoluteEncoderOffset =
+            new Rotation2d(-1.352971054).plus(new Rotation2d(Math.PI)); // MUST BE CALIBRATED
         break;
       default:
         throw new RuntimeException("Invalid module index");
@@ -96,8 +100,7 @@ public class ModuleIOSparkMax implements ModuleIO {
     turnRelativeEncoder = turnSparkMax.getEncoder();
 
     turnSparkMax.setInverted(isTurnMotorInverted);
-    driveSparkMax.setInverted(true);
-    driveSparkMax.setSmartCurrentLimit(40);
+    driveSparkMax.setSmartCurrentLimit(60);
     turnSparkMax.setSmartCurrentLimit(30);
     driveSparkMax.enableVoltageCompensation(12.0);
     turnSparkMax.enableVoltageCompensation(12.0);
@@ -106,7 +109,6 @@ public class ModuleIOSparkMax implements ModuleIO {
     driveEncoder.setMeasurementPeriod(10);
     driveEncoder.setAverageDepth(2);
 
-    turnRelativeEncoder.setPosition(0.0);
     turnRelativeEncoder.setMeasurementPeriod(10);
     turnRelativeEncoder.setAverageDepth(2);
 

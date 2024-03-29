@@ -1,18 +1,19 @@
 package frc.robot;
 
-import static edu.wpi.first.wpilibj2.command.Commands.runOnce;
+import static com.pathplanner.lib.auto.AutoBuilder.*;
+import static com.pathplanner.lib.path.PathPlannerPath.*;
+import static edu.wpi.first.wpilibj2.command.Commands.*;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.lib.controllers.Thrustmaster;
 import frc.robot.subsystems.drive.*;
 import frc.robot.subsystems.indexer.Indexer;
@@ -184,15 +185,73 @@ public class RobotContainer {
 
     NamedCommands.registerCommand(
         "shoot", superstructure.shoot().alongWith(superstructure.waitUntilEmpty()));
-    autoChooser = new LoggedDashboardChooser<>("auto chooser", AutoBuilder.buildAutoChooser());
-    var fourNote = PathPlannerPath.fromChoreoTrajectory("4note");
-    autoChooser.addOption("4note", AutoBuilder.followPath(fourNote));
+    autoChooser = new LoggedDashboardChooser<>("auto chooser", buildAutoChooser());
+    autoChooser.addOption("4note", getFourNote(true));
+    autoChooser.addOption("3note", getThreeNote(true));
+    autoChooser.addOption("middle to taxi", middleToTaxi());
+    autoChooser.addOption("5note", getFiveNote());
+    autoChooser.addOption(
+        "1note",
+        superstructure
+            .shootFixed()
+            .andThen(
+                runOnce(
+                    () ->
+                        drivebase.setPose(
+                            fromChoreoTrajectory("middle to 2nd note to middle")
+                                .getPreviewStartingHolonomicPose()))));
     configureBindings();
   }
 
+  private Command getFiveNote() {
+    return sequence(
+        getFourNote(false),
+        followPath(fromChoreoTrajectory("middle to 4th note to middle")),
+        shootAndWait());
+  }
+
+  private Command getThreeNote(boolean isFirstAuto) {
+    var firstPath = fromChoreoTrajectory("middle to 2nd note to middle");
+    return sequence(
+        resetToStartingPose(firstPath).onlyIf(() -> isFirstAuto),
+        shootAndWait(),
+        followPath(firstPath), // 1.5 s
+        shootAndWait(),
+        followPath(fromChoreoTrajectory("middle to 1st note to middle")), //
+        shootAndWait());
+  }
+
+  private Command shootAndWait() {
+    return superstructure
+        .shootFixed()
+        .andThen(race(superstructure.waitUntilEmpty(), waitSeconds(2)));
+  }
+
+  private Command resetToStartingPose(PathPlannerPath firstPath) {
+    return runOnce(
+        () ->
+            drivebase.setPose(
+                DriverStation.getAlliance().isPresent()
+                        && DriverStation.getAlliance().get() == DriverStation.Alliance.Blue
+                    ? firstPath.getPreviewStartingHolonomicPose()
+                    : firstPath
+                        .flipPath()
+                        .getPreviewStartingHolonomicPose()
+                        .plus(new Transform2d(0, 0, new Rotation2d(Math.PI)))));
+  }
+
+  private Command getFourNote(boolean taxi) {
+    var firstPath = fromChoreoTrajectory("middle to 3d note to middle");
+    return sequence(
+        resetToStartingPose(firstPath), shootAndWait(), followPath(firstPath), getThreeNote(false));
+  }
+
+  private Command middleToTaxi() {
+    return followPath(fromChoreoTrajectory("middle to taxi"));
+  }
+
   private void configureBindings() {
-    // TODO: consider adding rizzed auto chooser to go between testing and match
-    rightThrustmaster
+    leftThrustmaster
         .getButton(Thrustmaster.Button.BOTTOM)
         .onTrue(
             runOnce(
@@ -200,57 +259,43 @@ public class RobotContainer {
                     drivebase.setPose(
                         new Pose2d(drivebase.getPose().getTranslation(), new Rotation2d()))));
 
-    // chat, idea thinks im dumb...
+    /*
+     *    ░▒▓███████▓▒░ ░▒▓███████▓▒░ ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓████████▓▒░
+     *    ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░
+     *    ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒▒▓█▓▒░ ░▒▓█▓▒░
+     *    ░▒▓█▓▒░░▒▓█▓▒░░▒▓███████▓▒░ ░▒▓█▓▒░ ░▒▓█▓▒▒▓█▓▒░ ░▒▓██████▓▒░
+     *    ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▓█▓▒░  ░▒▓█▓▒░
+     *    ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░  ░▒▓█▓▓█▓▒░  ░▒▓█▓▒░
+     *    ░▒▓███████▓▒░ ░▒▓█▓▒░░▒▓█▓▒░░▒▓█▓▒░   ░▒▓██▓▒░   ░▒▓████████▓▒░
+     */
+    // chat, intellij thinks im dumb...
     //noinspection SuspiciousNameCombination
     drivebase.setDefaultCommand(
         drivebase.joystickDrive(
-            () -> -leftThrustmaster.getY(), leftThrustmaster::getX, rightThrustmaster::getX));
+            () -> -leftThrustmaster.getY(),
+            () -> -leftThrustmaster.getX(),
+            rightThrustmaster::getX));
 
-    rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.amp());
-    rightThrustmaster.getButton(Thrustmaster.Button.RIGHT).onTrue(superstructure.test());
-    // TODO: these jawns should not be binded in a match
-    // bro presses on button and unrecoverably bricks the robot :skull:
-    rightThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(superstructure.test());
+    //    rightThrustmaster.getButton(Thrustmaster.Button.RIGHT).onTrue(superstructure.test());
+    //    rightThrustmaster.getButton(Thrustmaster.Button.LEFT).onTrue(superstructure.idle());
 
-    leftThrustmaster
-        .getButton(Thrustmaster.Button.TRIGGER)
-        .onTrue(drivebase.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    leftThrustmaster
-        .getButton(Thrustmaster.Button.BOTTOM)
-        .onTrue(drivebase.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    leftThrustmaster
-        .getButton(Thrustmaster.Button.LEFT)
-        .onTrue(drivebase.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    leftThrustmaster
-        .getButton(Thrustmaster.Button.RIGHT)
-        .onTrue(drivebase.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-
-    rightThrustmaster
-        .getButton(Thrustmaster.Button.RIGHT_INSIDE_BOTTOM)
-        .onTrue(superstructure.sysId()./*andThen(indexer.sysId()).*/ andThen(shooter.sysId()));
-
-    rightThrustmaster
-        .getButton(Thrustmaster.Button.RIGHT_MIDDLE_BOTTOM)
-        .onTrue(superstructure.test());
-
-    rightThrustmaster
-        .getButton(Thrustmaster.Button.LEFT_INSIDE_BOTTOM)
-        .onTrue(drivebase.faceStart());
-
-    rightThrustmaster
-        .getButton(Thrustmaster.Button.BOTTOM)
-        .onTrue(
-            AutoBuilder.pathfindToPose(
-                drivebase
-                    .getPose()
-                    .plus(
-                        new Transform2d(
-                            new Translation2d(Units.Feet.of(1).in(Units.Meters), 0),
-                            new Rotation2d(0))),
-                new PathConstraints(6, 6, 100, 100)));
+    /*
+     *     ________   ___  ___   ________   ________   _________   ___   ________    ________
+     *    |\   ____\ |\  \|\  \ |\   __  \ |\   __  \ |\___   ___\|\  \ |\   ___  \ |\   ____\
+     *    \ \  \___|_\ \  \\\  \\ \  \|\  \\ \  \|\  \\|___ \  \_|\ \  \\ \  \\ \  \\ \  \___|
+     *     \ \_____  \\ \   __  \\ \  \\\  \\ \  \\\  \    \ \  \  \ \  \\ \  \\ \  \\ \  \  ___
+     *      \|____|\  \\ \  \ \  \\ \  \\\  \\ \  \\\  \    \ \  \  \ \  \\ \  \\ \  \\ \  \|\  \
+     *        ____\_\  \\ \__\ \__\\ \_______\\ \_______\    \ \__\  \ \__\\ \__\\ \__\\ \_______\
+     *       |\_________\\|__|\|__| \|_______| \|_______|     \|__|   \|__| \|__| \|__| \|_______|
+     *       \|_________|
+     */
+    rightThrustmaster.getButton(Thrustmaster.Button.TRIGGER).onTrue(superstructure.shootFixed());
+    rightThrustmaster.getButton(Thrustmaster.Button.BOTTOM).onTrue(superstructure.cancelShot());
   }
 
   public Command getAutonomousCommand() {
-    return autoChooser.get();
+    Command auto = autoChooser.get();
+    CommandScheduler.getInstance().removeComposedCommand(auto);
+    return auto.andThen(middleToTaxi());
   }
 }

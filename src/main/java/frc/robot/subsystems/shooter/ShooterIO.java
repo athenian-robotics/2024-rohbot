@@ -27,12 +27,18 @@ public interface ShooterIO {
 
   void sysIdState();
 
+  default void shootFixed() {
+    System.out.println("idot");
+  }
+  ;
+
   enum State {
     SPINUP,
     SYSID,
     TESTING,
     SHOOT,
     INTAKE,
+    SHOOTFIXED,
     AMP
   }
 
@@ -49,5 +55,6 @@ public interface ShooterIO {
     public double errorR;
     public double setPointL;
     public double setPointR;
+    public boolean activated;
   }
 }

@@ -19,7 +19,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 public class SuperstructureIOPhysical implements SuperstructureIO {
   private static final LoggedDashboardNumber SHOOTER_SENSOR_THRESHOLD =
-      new LoggedDashboardNumber("shooter sensor threshold", 250); // TODO: Tune
+      new LoggedDashboardNumber("shooter sensor threshold", 75);
   private final Intake intake;
   private final Indexer indexer;
   private final Shooter shooter;
@@ -29,7 +29,7 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
   private final TimeOfFlight shooterSensor = new TimeOfFlight(12);
   private final LoggedDashboardBoolean intakeOn = new LoggedDashboardBoolean("intake on", false);
   private final LoggedDashboardBoolean shoot = new LoggedDashboardBoolean("shoot", false);
-  private State state = new State(TESTING, OUTSIDE_RANGE);
+  private State state = new State(NO_NOTE, OUTSIDE_RANGE);
   private boolean latch; // icky shared state... i hate java
   private Command command;
   private State bufferedState;
@@ -85,8 +85,9 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
       case HAS_NOTE -> {
         intake.off();
         switch (state.rangeState()) {
-          case IN_RANGE -> indexer.setState(IndexerIO.State.ADJUSTING);
-          case OUTSIDE_RANGE -> indexer.setState(IndexerIO.State.IDLE);
+            //          case IN_RANGE -> indexer.setState(IndexerIO.State.ADJUSTING);
+            //          case OUTSIDE_RANGE -> indexer.setState(IndexerIO.State.IDLE);
+          default -> indexer.setState(IndexerIO.State.FLAT);
         }
 
         shooter.spinUp();
@@ -97,7 +98,6 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
             shooter.spinUp();
             indexer.setState(IndexerIO.State.ADJUSTING);
             swerve.faceSpeaker().schedule();
-            if (shooter.ready() && indexer.ready() && swerve.ready()) shooter.shoot();
           }
           case OUTSIDE_RANGE -> {
             // log?, should never happen
@@ -116,6 +116,16 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
             true); // disable high frequency (high overhead) swerve odometry to reduce looptime
         shooter.sysIdState();
         indexer.setState(IndexerIO.State.SYSID);
+      }
+      case SHOOT_FIXED -> {
+        shooter.shootFixed();
+        indexer.setState(IndexerIO.State.SHOOTFIXED);
+        new Trigger(
+                () ->
+                    shooter.ready()
+                        && indexer.ready()
+                        && bufferedState.subsystemState() == SHOOT_FIXED)
+            .onTrue(runOnce(shooter::shoot));
       }
       case AMP -> {
         if (!command.isScheduled()) command.schedule();
@@ -146,6 +156,18 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
   }
 
   @Override
+  public Command idle() {
+    return runOnce(
+        () -> {
+          latch = false;
+          state =
+              shooterEmpty()
+                  ? state.changeSubsystemState(NO_NOTE)
+                  : state.changeSubsystemState(HAS_NOTE);
+        });
+  }
+
+  @Override
   public Command cancelShot() {
     return runOnce(
         () -> {
@@ -166,6 +188,7 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
     inputs.sensorRange = shooterSensor.getRange();
     inputs.shooterEmpty = shooterEmpty();
     inputs.state = state;
+    inputs.bufferedState = bufferedState.toString();
     inputs.stateString = state.toString();
   }
 
@@ -215,11 +238,18 @@ public class SuperstructureIOPhysical implements SuperstructureIO {
         });
   }
 
-  public Command sysID() {
+  @Override
+  public Command shootFixed() {
     return runOnce(
-        () -> {
-          latch = true;
-          state = state.changeSubsystemState(SYSID);
-        });
+            () -> {
+              latch = false;
+              state = state.changeSubsystemState(SHOOT_FIXED);
+            })
+        .onlyIf(() -> !shooterEmpty());
+  }
+
+  @Override
+  public boolean noNote() {
+    return state.subsystemState() == NO_NOTE;
   }
 }

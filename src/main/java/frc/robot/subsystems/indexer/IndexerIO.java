@@ -30,6 +30,7 @@ public interface IndexerIO {
     SYSID,
     TESTING,
     AMP_INIT,
+    SHOOTFIXED,
     AMP_PULSE
   }
 
@@ -46,5 +47,7 @@ public interface IndexerIO {
     public double errorVelo;
     public double amps;
     public boolean hasCurrent;
+    public boolean ready;
+    public double limiterValue;
   }
 }

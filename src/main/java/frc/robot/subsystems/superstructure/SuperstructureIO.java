@@ -14,6 +14,8 @@ public interface SuperstructureIO {
 
   Command test();
 
+  Command idle();
+
   Command cancelShot();
 
   void updateInputs(SuperstructureInputs inputs);
@@ -24,8 +26,13 @@ public interface SuperstructureIO {
 
   Command sysId();
 
+  Command shootFixed();
+
+  boolean noNote();
+
   @AutoLog
   class SuperstructureInputs {
+    public String bufferedState;
     double sensorRange;
     boolean shooterEmpty;
     State state; // its loggable, but at what cost? also does not show up in elastic...
@@ -42,6 +49,7 @@ public interface SuperstructureIO {
       SHOOTING,
       TESTING,
       SYSID,
+      SHOOT_FIXED,
       AMP
     }
 

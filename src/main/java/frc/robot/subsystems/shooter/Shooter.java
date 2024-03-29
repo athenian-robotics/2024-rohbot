@@ -54,4 +54,8 @@ public class Shooter extends SubsystemBase {
   public void sysIdState() {
     io.sysIdState();
   }
+
+  public void shootFixed() {
+    io.shootFixed();
+  }
 }

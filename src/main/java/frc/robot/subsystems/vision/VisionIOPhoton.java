@@ -1,5 +1,8 @@
 package frc.robot.subsystems.vision;
 
+import static edu.wpi.first.math.util.Units.degreesToRadians;
+import static edu.wpi.first.math.util.Units.inchesToMeters;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Matrix;
@@ -29,7 +32,11 @@ public class VisionIOPhoton implements VisionIO {
             AprilTagFieldLayout.loadField(AprilTagFields.k2024Crescendo),
             PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
             camera,
-            new Transform3d(0, 0, 0, new Rotation3d(0, 0, 0))); // TODO: chat is this rizz?
+            new Transform3d(
+                inchesToMeters(13.25),
+                inchesToMeters(8),
+                inchesToMeters(16),
+                new Rotation3d(0, degreesToRadians(-17), 0))); // TODO: chat is this rizz?
     photonEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
   }
 

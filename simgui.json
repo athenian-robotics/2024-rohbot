@@ -2,10 +2,14 @@
   "NTProvider": {
     "types": {
       "/FMSInfo": "FMSInfo",
-      "/SmartDashboard/VisionSystemSim-main/Sim Field": "Field2d"
+      "/SmartDashboard/VisionSystemSim-main/Sim Field": "Field2d",
+      "/SmartDashboard/auto chooser": "String Chooser"
     }
   },
   "NetworkTables": {
+    "Persistent Values": {
+      "open": false
+    },
     "transitory": {
       "AdvantageKit": {
         "RealOutputs": {
@@ -26,9 +30,15 @@
         }
       },
       "SmartDashboard": {
+        "auto chooser": {
+          "string[]##v_/SmartDashboard/auto chooser/options": {
+            "open": true
+          }
+        },
         "left shooter power deg": {
           "open": true
-        }
+        },
+        "open": true
       },
       "photonvision": {
         "cam": {

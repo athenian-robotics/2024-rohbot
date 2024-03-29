@@ -36,26 +36,29 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   private static final int LEAD_ANGLE_MOTOR_ID = 10;
   private static final int FOLLOW_ANGLE_MOTOR_ID = 11;
   private static final double kV = 13.3;
-  private static final double kA = 1.3738;
+  private static final double kA = 0.9; // 1.3738;
   private static final double kS = 0.6971;
   private static final double kG = 0.6326;
   private static final Measure<Angle> ANGLE_STANDARD_DEVIATION = Rotations.of(10000);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_STANDARD_DEVIATION =
       RotationsPerSecond.of(1000);
 
-  private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = Degrees.of(2);
+  private static final Measure<Angle> ANGLE_ERROR_TOLERANCE = Degrees.of(5);
   private static final Measure<Velocity<Angle>> ANGLE_SPEED_ERROR_TOLERANCE =
-      DegreesPerSecond.of(1000);
+      DegreesPerSecond.of(2000);
+
   private static final Measure<Angle> REDUCTION_RATIO = Rotations.of(1 / ((54.0 / 22) * 60));
   private static final Measure<Voltage> MAX_ANGLE_MOTOR_VOLTAGE =
-      Volts.of(10); // TODO: consider if this is ass
+      Volts.of(8); // TODO: consider if this is ass
   private static final Measure<Time> ROBOT_TIME_STEP = Seconds.of(0.02);
-  private static final Measure<Angle> FLAT_ANGLE = Degrees.of(10);
+  private static final Measure<Angle> FLAT_ANGLE = Degrees.of(0);
   private static final int CURRENT_LIMIT = 30;
   private static final double TOTAL_CURRENT_LIMIT = CURRENT_LIMIT * 2;
-  private static final Measure<Angle> IDLE_ANGLE = Degrees.of(45);
+  private static final Measure<Angle> IDLE_ANGLE = Degrees.of(20);
   private static final Measure<Angle> AMP_ANGLE = Degrees.of(80); // snmTODO: tune
   private static final Measure<Angle> PULSE_ANGLE = Degrees.of(11);
+  private static final Measure<Angle> SHOOT_FIXED_ANGLE = Degrees.of(55);
+  private static final Measure<Angle> ANGLE_ALLOTED_ERROR = Degrees.of(3);
   private final Drive poseEstimator;
   private final CANSparkFlex leadMotor;
   private final LinearSystemLoop<N2, N1, N1> loop;
@@ -64,10 +67,11 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
   private final PowerBudgetPhysical power;
   private final LoggedDashboardNumber angle = new LoggedDashboardNumber("hood angle", 0);
   private final SysIdRoutine routine;
-  private final SlewRateLimiter limiter = new SlewRateLimiter((double) 5 / 8); // rot / s
+  private final SlewRateLimiter limiter = new SlewRateLimiter(0.06); // rot / s
   @Getter private final double UPPER_LIMIT = 30; // 40
   @Getter private final double LOWER_LIMIT = 5;
   @Getter private State state = State.TESTING;
+  private double nextR = 0;
 
   public IndexerIOPhysical(
       ShooterDataTable table, final Drive poseEstimator, PowerBudgetPhysical power) {
@@ -76,13 +80,13 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
     leadMotor.restoreFactoryDefaults();
     leadMotor.setInverted(false);
     leadMotor.setSmartCurrentLimit(CURRENT_LIMIT);
-    leadMotor.enableVoltageCompensation(12);
+    leadMotor.enableVoltageCompensation(12.8);
 
     followMotor = new CANSparkFlex(FOLLOW_ANGLE_MOTOR_ID, CANSparkLowLevel.MotorType.kBrushless);
     followMotor.restoreFactoryDefaults();
     followMotor.setSmartCurrentLimit(CURRENT_LIMIT);
     followMotor.follow(leadMotor, true);
-    followMotor.enableVoltageCompensation(12);
+    followMotor.enableVoltageCompensation(12.8);
 
     this.table = table;
 
@@ -142,6 +146,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
 
     leadMotor.burnFlash();
     followMotor.burnFlash();
+
+    limiter.reset(getAngle().in(Rotations));
   }
 
   private void log(SysIdRoutineLog sysIdRoutineLog) {
@@ -162,15 +168,6 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
 
   @Override
   public void periodic() {
-    if (!power.hasCurrent(
-            leadMotor.getOutputCurrent() + followMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)
-        || state == State.SYSID
-        || DriverStation.isDisabled()) {
-      loop.reset(VecBuilder.fill(getAngle().in(Rotations), getVelocity().in(RotationsPerSecond)));
-      return;
-    }
-
-    double nextR = 0;
     switch (state) {
       case FLAT -> nextR = FLAT_ANGLE.in(Rotations);
       case ADJUSTING -> nextR =
@@ -180,9 +177,19 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
               .orElse(IDLE_ANGLE)
               .in(Rotations);
       case TESTING -> nextR = Degrees.of(angle.get()).in(Rotations);
-      case IDLE -> IDLE_ANGLE.in(Rotations);
+      case IDLE -> nextR = IDLE_ANGLE.in(Rotations);
       case AMP_INIT -> nextR = AMP_ANGLE.in(Rotations);
+      case SHOOTFIXED -> nextR = SHOOT_FIXED_ANGLE.in(Rotations);
       case AMP_PULSE -> nextR = AMP_ANGLE.in(Rotations) + PULSE_ANGLE.in(Rotations);
+    }
+
+    if (!power.hasCurrent(
+            leadMotor.getOutputCurrent() + followMotor.getOutputCurrent(), TOTAL_CURRENT_LIMIT)
+        || state == State.SYSID
+        || DriverStation.isDisabled()
+        || ready()) {
+      loop.reset(VecBuilder.fill(getAngle().in(Rotations), getVelocity().in(RotationsPerSecond)));
+      return;
     }
 
     loop.setNextR(limiter.calculate(nextR), 0);
@@ -207,6 +214,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
     inputs.inBounds = upperBound() && lowerBound();
     inputs.upBound = upperBound();
     inputs.lowBound = lowerBound();
+    inputs.limiterValue = limiter.lastValue();
+    inputs.ready = ready();
     inputs.error = Rotations.of(loop.getError(0)).in(Degrees);
     inputs.errorVelo = RotationsPerSecond.of(loop.getError(1)).in(DegreesPerSecond);
     inputs.hasCurrent =
@@ -248,7 +257,8 @@ public class IndexerIOPhysical extends SubsystemBase implements IndexerIO {
 
   @Override
   public boolean ready() {
-    return loop.getError(0) < ANGLE_ERROR_TOLERANCE.in(Rotations)
-        && loop.getError(1) < ANGLE_SPEED_ERROR_TOLERANCE.in(RotationsPerSecond);
+    return Math.abs(getAngle().minus(Rotations.of(nextR)).in(Rotations))
+            < ANGLE_ALLOTED_ERROR.in(Rotations)
+        && nextR == SHOOT_FIXED_ANGLE.in(Rotations);
   }
 }

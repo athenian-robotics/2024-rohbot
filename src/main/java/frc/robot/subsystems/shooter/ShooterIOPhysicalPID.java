@@ -43,6 +43,9 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
   private static final double ACTIVATION_SPEED = 1; // TODO: Tune
   private static final Measure<Velocity<Angle>> AMP_SPEEDL = DegreesPerSecond.of(80); // TODO: Tune
   private static final Measure<Velocity<Angle>> AMP_SPEEDR = DegreesPerSecond.of(105);
+  private static final Measure<Velocity<Angle>> FIXED_SHOT_SPEEDR = RotationsPerSecond.of(75);
+  private static final Measure<Velocity<Angle>> FIXED_SHOTE_SPEEDL = RotationsPerSecond.of(65);
+
   private final Drive poseEstimator;
   private final TalonFX driveL = new TalonFX(LEFT_DRIVE_ID, "can");
   private final TalonFX driveR = new TalonFX(RIGHT_DRIVE_ID, "can");
@@ -60,7 +63,7 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
       new LoggedDashboardBoolean("activation motor toggle", false);
   private final PowerBudgetPhysical power;
   @Getter private State state = TESTING;
-  private final double MAX_ERROR = 3; // todo: tune
+  private final double MAX_ERROR = 4; // todo: tune
 
   private final LoggedDashboardNumber lP = new LoggedDashboardNumber("lP", 0.1);
   private final LoggedDashboardNumber rP = new LoggedDashboardNumber("rP", 1);
@@ -140,8 +143,9 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
 
   @Override
   public boolean ready() {
-    return Math.abs(pidL.getVelocityError()) < MAX_ERROR
-        && Math.abs(pidR.getVelocityError()) < MAX_ERROR;
+    return Math.abs(pidL.getPositionError()) < MAX_ERROR
+        && Math.abs(pidR.getPositionError()) < MAX_ERROR
+        && (state == SHOOTFIXED);
   }
 
   public Command sysIdQuasistaticL(SysIdRoutine.Direction direction) {
@@ -209,10 +213,16 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
       }
 
       case SHOOT -> {
-        if (!ready()) break;
         activation.set(ACTIVATION_SPEED);
       }
       case INTAKE -> activation.set(ACTIVATION_SPEED);
+      case SHOOTFIXED -> {
+        driveL.setVoltage(calculateLVoltage(FIXED_SHOT_SPEEDR));
+
+        driveR.setVoltage(calculateRVoltage(FIXED_SHOTE_SPEEDL));
+
+        activation.set(0);
+      }
       case AMP -> {
         activation.set(0);
 
@@ -236,6 +246,7 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
     inputs.setPointL = RotationsPerSecond.of(pidL.getSetpoint()).in(RotationsPerSecond);
     inputs.setPointR = RotationsPerSecond.of(pidR.getSetpoint()).in(RotationsPerSecond);
     inputs.ready = ready();
+    inputs.activated = activation.get() > 0;
   }
 
   @Override
@@ -285,5 +296,10 @@ public class ShooterIOPhysicalPID extends SubsystemBase implements ShooterIO {
   @Override
   public void sysIdState() {
     state = SYSID;
+  }
+
+  @Override
+  public void shootFixed() {
+    state = SHOOTFIXED;
   }
 }

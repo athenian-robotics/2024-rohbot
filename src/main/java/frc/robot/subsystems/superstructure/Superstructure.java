@@ -35,11 +35,23 @@ public class Superstructure extends SubsystemBase {
     return superstructureIO.cancelShot();
   }
 
+  public Command idle() {
+    return superstructureIO.idle();
+  }
+
   public Command waitUntilEmpty() {
     return superstructureIO.waitUntilEmpty();
   }
 
   public Command sysId() {
     return superstructureIO.sysId();
+  }
+
+  public Command shootFixed() {
+    return superstructureIO.shootFixed();
+  }
+
+  public boolean noNote() {
+    return superstructureIO.noNote();
   }
 }
